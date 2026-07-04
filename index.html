@@ -157,6 +157,14 @@
   .check-item .icon{font-size:18px;flex:0 0 auto;}
   .check-item .why{color:var(--muted);font-size:11px;margin-top:1px;}
 </style>
+<!-- Google Analytics (GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-48ZPXHK87T"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-48ZPXHK87T');
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -454,6 +462,9 @@ function renderWebcams(webcamData, place){
     document.querySelectorAll('.cam-card').forEach(card => {
       card.addEventListener('click', () => {
         const embed = card.dataset.embed;
+        if (typeof gtag === 'function') {
+          gtag('event', 'webcam_click', { has_video: !!embed });
+        }
         if (embed) {
           card.innerHTML = `<iframe src="${embed}" style="width:100%;aspect-ratio:4/3;border:0;display:block;" allow="autoplay" loading="lazy"></iframe>` + card.querySelector('.cam-meta').outerHTML;
         } else {
@@ -474,6 +485,12 @@ async function loadPlace(place){
   resultEl.innerHTML = '';
   setStatus('날씨 불러오는 중...');
   searchBtn.disabled = true;
+  if (typeof gtag === 'function') {
+    gtag('event', 'city_search', {
+      city_name: place.name,
+      country: place.country || '',
+    });
+  }
   try {
     const [weather, webcams] = await Promise.all([
       getWeather(place.latitude, place.longitude),
