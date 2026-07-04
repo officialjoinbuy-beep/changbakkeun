@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>창밖은 · 여행지 날씨 확인</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="창밖은">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  :root{
+    --navy:#0B1220;
+    --navy-2:#111B2E;
+    --board:#0E1626;
+    --amber:#F2C230;
+    --amber-dim:#8C6E1E;
+    --ivory:#EDEBE3;
+    --muted:#7C8AA0;
+    --teal:#3A7CA5;
+    --err:#E1604F;
+    --split-line: rgba(255,255,255,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--navy);color:var(--ivory);
+    font-family:'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .mono{font-family:'Space Mono', monospace;}
+
+  .wrap{max-width:720px;margin:0 auto;padding:28px 18px 60px;}
+
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size:11px;letter-spacing:.18em;color:var(--amber);
+    text-transform:uppercase;margin-bottom:6px;
+  }
+  h1{font-size:22px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em;}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 22px;line-height:1.5;}
+
+  .search-row{display:flex;gap:8px;margin-bottom:8px;}
+  .recent-cities{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+  .recent-chip{
+    background:var(--navy-2);border:1px solid var(--split-line);border-radius:999px;
+    padding:6px 12px;font-size:12px;color:var(--muted);cursor:pointer;
+  }
+  .recent-chip:hover{border-color:var(--amber-dim);color:var(--ivory);}
+  input[type=text]{
+    flex:1;background:var(--navy-2);border:1px solid var(--split-line);
+    color:var(--ivory);border-radius:6px;padding:12px 14px;font-size:15px;
+    font-family:inherit;
+  }
+  input[type=text]:focus{outline:2px solid var(--teal);outline-offset:1px;}
+  button{
+    background:var(--amber);color:#1A1200;border:none;border-radius:6px;
+    padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer;
+    font-family:inherit;
+  }
+  button:hover{background:#ffd453;}
+  button:disabled{background:var(--amber-dim);color:#3a2f10;cursor:default;}
+  button.ghost{
+    background:transparent;border:1px solid var(--split-line);color:var(--muted);
+    font-weight:400;
+  }
+  button.ghost:hover{border-color:var(--teal);color:var(--ivory);}
+
+  .apikey-toggle{font-size:12px;color:var(--muted);margin:2px 0 20px;cursor:pointer;
+    text-decoration:underline dotted;display:inline-block;}
+  .apikey-box{display:none;margin-bottom:20px;padding:12px;border:1px dashed var(--split-line);
+    border-radius:8px;font-size:12px;color:var(--muted);}
+  .apikey-box.open{display:block;}
+  .apikey-box input{width:100%;margin-top:8px;font-size:13px;}
+  .apikey-box a{color:var(--teal);}
+
+  .candidates{margin:10px 0 20px;display:flex;flex-direction:column;gap:6px;}
+  .candidate{
+    background:var(--navy-2);border:1px solid var(--split-line);border-radius:6px;
+    padding:10px 12px;font-size:13px;cursor:pointer;display:flex;justify-content:space-between;
+  }
+  .candidate:hover{border-color:var(--amber-dim);}
+  .candidate span.loc{color:var(--muted);}
+
+  /* Split-flap board */
+  .board{
+    background:var(--board);border:1px solid var(--split-line);border-radius:10px;
+    padding:22px 20px;margin-top:18px;position:relative;overflow:hidden;
+  }
+  .board::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--amber);
+    opacity:.85;
+  }
+  .board-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+  .board-city{font-size:22px;font-weight:700;}
+  .board-country{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);
+    letter-spacing:.08em;}
+  .board-time{font-family:'Space Mono',monospace;font-size:12px;color:var(--teal);}
+  .board-time-wrap{text-align:right;}
+  .board-diff{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);margin-top:3px;}
+
+  .flap-row{display:flex;align-items:center;gap:18px;padding:14px 0;
+    border-top:1px solid var(--split-line);}
+  .flap-temp{
+    font-family:'Space Mono',monospace;font-size:44px;font-weight:700;color:var(--amber);
+    line-height:1;letter-spacing:-.02em;
+  }
+  .flap-cond{font-size:15px;}
+  .flap-cond .icon{font-size:26px;margin-right:6px;}
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;
+    border-top:1px solid var(--split-line);padding-top:14px;}
+  .stat{font-size:12px;color:var(--muted);}
+  .stat b{display:block;font-family:'Space Mono',monospace;color:var(--ivory);
+    font-size:15px;font-weight:400;margin-top:2px;}
+
+  .section-label{
+    font-family:'Space Mono',monospace;font-size:15px;font-weight:700;letter-spacing:.08em;
+    color:var(--ivory);text-transform:uppercase;margin:28px 0 12px;
+  }
+
+  .cams-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media (max-width:480px){.cams-grid{grid-template-columns:1fr;}}
+  .cam-card{
+    background:var(--navy-2);border:1px solid var(--split-line);border-radius:8px;
+    overflow:hidden;cursor:pointer;
+  }
+  .cam-card img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;background:#1a1a1a;}
+  .cam-meta{padding:8px 10px;font-size:12px;}
+  .cam-title{font-weight:700;margin-bottom:2px;}
+  .cam-loc{color:var(--muted);font-size:11px;}
+
+  .empty-state{
+    border:1px dashed var(--split-line);border-radius:8px;padding:20px;
+    font-size:13px;color:var(--muted);text-align:center;line-height:1.6;
+  }
+  .empty-state a{color:var(--teal);}
+  .credit{font-size:11px;color:var(--muted);margin-top:10px;text-align:right;}
+  .credit a{color:var(--muted);}
+
+  .status{font-size:13px;color:var(--muted);margin:10px 0;}
+  .status.err{color:var(--err);}
+
+  footer{margin-top:36px;font-size:11px;color:var(--muted);text-align:center;line-height:1.7;}
+  .visually-hidden{position:absolute;left:-9999px;}
+  .clothing-tip{
+    margin-top:14px;padding:10px 12px;background:rgba(242,194,48,0.08);
+    border:1px solid var(--amber-dim);border-radius:8px;font-size:13px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .clothing-tip .icon{font-size:18px;}
+
+  .forecast-strip{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;margin-top:2px;}
+  .forecast-day{
+    flex:0 0 auto;min-width:76px;background:var(--navy-2);border:1px solid var(--split-line);
+    border-radius:8px;padding:10px 8px;text-align:center;
+  }
+  .forecast-day .d-label{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);
+    margin-bottom:4px;}
+  .forecast-day .d-icon{font-size:22px;margin-bottom:4px;}
+  .forecast-day .d-temp{font-family:'Space Mono',monospace;font-size:13px;}
+  .forecast-day .d-temp .max{color:var(--ivory);}
+  .forecast-day .d-temp .min{color:var(--muted);}
+  .forecast-day .d-rain{font-size:11px;color:var(--teal);margin-top:2px;}
+  .checklist{display:flex;flex-direction:column;gap:6px;}
+  .check-item{
+    display:flex;align-items:center;gap:10px;background:var(--navy-2);
+    border:1px solid var(--split-line);border-radius:6px;padding:10px 12px;font-size:13px;
+  }
+  .check-item .icon{font-size:18px;flex:0 0 auto;}
+  .check-item .why{color:var(--muted);font-size:11px;margin-top:1px;}
+</style>
+<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5364478364167025"
+  crossorigin="anonymous"></script>
+<!-- Google Analytics (GA4) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-48ZPXHK87T"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-48ZPXHK87T');
+</script>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">창밖은 · WINDOWFAR</div>
+  <h1>지금, 그곳 창밖은 어떨까요</h1>
+  <p class="sub">도시 이름을 입력하면 실시간 기온과 근처 공개 웹캠 화면을 함께 보여드려요.</p>
+
+  <div class="search-row">
+    <label for="cityInput" class="visually-hidden">도시 이름</label>
+    <input type="text" id="cityInput" placeholder="예: 파리, Paris, 오사카" autocomplete="off">
+    <button id="searchBtn">검색</button>
+  </div>
+  <div id="recentCities" class="recent-cities"></div>
+  <div id="candidates" class="candidates"></div>
+  <div id="status" class="status"></div>
+  <div id="result"></div>
+
+  <footer>
+    창밖은 (Windowfar)<br>
+    날씨 데이터: Open‑Meteo · 웹캠: Windy Webcams API<br>
+    웹캠은 야외 자연/거리 환경 관측용으로 설치된 공개 카메라만 표시됩니다.
+  </footer>
+</div>
+
+<script>
+// ⚠️ 여기에 본인 Windy Webcams API 키를 직접 붙여넣으세요.
+// 이 키는 모든 방문자가 공용으로 쓰게 됩니다 (소스보기하면 노출되니, 참고해서 관리하세요).
+const WINDY_API_KEY = 'YOUR_WINDY_API_KEY_HERE';
+
+const cityInput = document.getElementById('cityInput');
+const searchBtn = document.getElementById('searchBtn');
+const statusEl = document.getElementById('status');
+const resultEl = document.getElementById('result');
+const candidatesEl = document.getElementById('candidates');
+const recentCitiesEl = document.getElementById('recentCities');
+
+const RECENT_KEY = 'recent-cities';
+const MAX_RECENT = 5;
+
+async function getRecentCities(){
+  try {
+    const saved = await window.storage.get(RECENT_KEY);
+    return saved && saved.value ? JSON.parse(saved.value) : [];
+  } catch (e) { return []; }
+}
+
+async function saveRecentCity(place){
+  try {
+    let list = await getRecentCities();
+    list = list.filter(p => p.id !== place.id);
+    list.unshift(place);
+    list = list.slice(0, MAX_RECENT);
+    await window.storage.set(RECENT_KEY, JSON.stringify(list));
+    renderRecentCities(list);
+  } catch (e) { console.error('recent city save failed', e); }
+}
+
+function renderRecentCities(list){
+  if (!list.length) { recentCitiesEl.innerHTML = ''; return; }
+  recentCitiesEl.innerHTML = list.map((p, i) =>
+    `<span class="recent-chip" data-idx="${i}">${p.name}${p.country ? ' · ' + p.country : ''}</span>`
+  ).join('');
+  Array.from(recentCitiesEl.children).forEach((el, i) => {
+    el.addEventListener('click', () => loadPlace(list[i]));
+  });
+}
+
+(async () => { renderRecentCities(await getRecentCities()); })();
+
+const WMO = {
+  0:['☀️','맑음'],1:['🌤️','대체로 맑음'],2:['⛅','구름 조금'],3:['☁️','흐림'],
+  45:['🌫️','안개'],48:['🌫️','서리 안개'],
+  51:['🌦️','약한 이슬비'],53:['🌦️','이슬비'],55:['🌧️','강한 이슬비'],
+  61:['🌧️','약한 비'],63:['🌧️','비'],65:['🌧️','강한 비'],
+  71:['🌨️','약한 눈'],73:['🌨️','눈'],75:['❄️','강한 눈'],
+  80:['🌦️','약한 소나기'],81:['🌧️','소나기'],82:['⛈️','강한 소나기'],
+  95:['⛈️','뇌우'],96:['⛈️','뇌우(우박)'],99:['⛈️','강한 뇌우(우박)']
+};
+
+function setStatus(msg, isErr){
+  statusEl.textContent = msg || '';
+  statusEl.className = 'status' + (isErr ? ' err' : '');
+}
+
+// 한글 지명 매핑 누락이 잦은 한국 주요 도시 → 영문명 (즉시 매칭용, 번역 호출 없이 빠르게 처리)
+const KO_MAJOR_CITY_EN = {
+  '서울':'Seoul','인천':'Incheon','부산':'Busan','대구':'Daegu','대전':'Daejeon',
+  '광주':'Gwangju','울산':'Ulsan','세종':'Sejong','수원':'Suwon','성남':'Seongnam',
+  '고양':'Goyang','용인':'Yongin','청주':'Cheongju','전주':'Jeonju','천안':'Cheonan',
+  '창원':'Changwon','제주':'Jeju',
+  '상해':'Shanghai','상하이':'Shanghai','북경':'Beijing','베이징':'Beijing',
+  '동경':'Tokyo'
+};
+
+// 목록에 없는 세계 도시는 무료 번역 API로 한→영 자동 변환 시도
+async function translateKoToEn(text){
+  try {
+    const url = 'https://api.mymemory.translated.net/get?q=' +
+      encodeURIComponent(text) + '&langpair=ko|en';
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const translated = data && data.responseData && data.responseData.translatedText;
+    if (!translated || translated.trim().toLowerCase() === text.trim().toLowerCase()) return null;
+    return translated.trim();
+  } catch (e) {
+    return null; // 번역 실패해도 기존 검색은 계속 진행
+  }
+}
+
+async function geocode(name){
+  const tryFetch = async (query, lang) => {
+    const url = 'https://geocoding-api.open-meteo.com/v1/search?name=' +
+      encodeURIComponent(query) + '&count=5' + (lang ? '&language=' + lang : '') + '&format=json';
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('geocode http ' + res.status);
+    const data = await res.json();
+    return data.results || [];
+  };
+
+  const trimmed = name.trim();
+  const isKorean = /[가-힣]/.test(trimmed);
+  let enName = KO_MAJOR_CITY_EN[trimmed];
+  if (!enName && isKorean) enName = await translateKoToEn(trimmed); // 목록에 없으면 자동 번역 시도
+
+  const queries = [tryFetch(name, 'ko'), tryFetch(name, null)];
+  if (enName) queries.push(tryFetch(enName, null)); // 영문명도 같이 검색해서 후보에 포함
+
+  const settled = await Promise.allSettled(queries);
+  const merged = settled.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
+  if (!merged.length && settled.every(r => r.status === 'rejected')) {
+    throw settled[0].reason;
+  }
+  const seen = new Set();
+  const deduped = merged.filter(p => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  });
+  // 영문 검색으로 찾은 결과(대체로 정확한 대도시)를 우선순위로, 그 다음 인구순
+  deduped.sort((a, b) => (b.population || 0) - (a.population || 0));
+  return deduped.slice(0, 6);
+}
+
+async function getWeather(lat, lon){
+  const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat +
+    '&longitude=' + lon +
+    '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day' +
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,uv_index_max,sunrise,sunset' +
+    '&timezone=auto&forecast_days=10';
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('weather failed');
+  return res.json();
+}
+
+async function getWebcams(lat, lon, key){
+  if (!key || key === 'YOUR_WINDY_API_KEY_HERE') return { skipped:true };
+  const url = 'https://api.windy.com/webcams/api/v3/webcams?nearby=' +
+    lat + ',' + lon + ',30&limit=6&include=images,location,urls,player';
+  try {
+    const res = await fetch(url, { headers: { 'x-windy-api-key': key } });
+    if (!res.ok) throw new Error('webcam http ' + res.status);
+    return res.json();
+  } catch (e) {
+    return { error: e.message };
+  }
+}
+
+function clothingTip(feelsLike){
+  if (feelsLike >= 28) return ['🩳', '민소매·반바지 — 더운 날씨예요'];
+  if (feelsLike >= 23) return ['👕', '반팔이면 충분해요'];
+  if (feelsLike >= 20) return ['🧥', '반팔 + 얇은 가디건 정도'];
+  if (feelsLike >= 17) return ['🧶', '얇은 니트나 맨투맨 챙기세요'];
+  if (feelsLike >= 12) return ['🧥', '자켓이나 가벼운 코트 필요해요'];
+  if (feelsLike >= 9)  return ['🧥', '트렌치코트·니트 등 겹쳐 입기'];
+  if (feelsLike >= 5)  return ['🧣', '울코트·목도리 챙기세요'];
+  return ['🧤', '패딩 등 방한용품 필수예요'];
+}
+
+function packingList(cur, today){
+  const feelsLike = cur.apparent_temperature ?? cur.temperature_2m;
+  const rainPct = today ? today.precipitation_probability_max[0] : 0;
+  const uv = today ? today.uv_index_max[0] : 0;
+  const items = [];
+
+  // 온도 기반 의류
+  const [cIcon, cText] = clothingTip(feelsLike);
+  items.push([cIcon, cText, '오늘 체감온도 ' + Math.round(feelsLike) + '° 기준']);
+
+  if (feelsLike < 12) items.push(['🧤', '얇은 장갑·목도리', '체감온도가 낮아요']);
+
+  // 강수
+  if (rainPct >= 60) items.push(['☔', '우산 필수', '강수확률 ' + rainPct + '%']);
+  else if (rainPct >= 30) items.push(['🌂', '접이식 우산 챙기기', '강수확률 ' + rainPct + '%']);
+
+  // 자외선
+  if (uv >= 8) items.push(['🕶️', '선크림·양산·모자', '자외선지수 매우 높음(' + Math.round(uv) + ')']);
+  else if (uv >= 5) items.push(['🧢', '선크림 정도는 챙기세요', '자외선지수 보통(' + Math.round(uv) + ')']);
+
+  // 더위/추위 보조
+  if (feelsLike >= 28) items.push(['🧴', '휴대용 선풍기·물티슈', '더운 날씨예요']);
+  if (feelsLike <= 0) items.push(['🔥', '핫팩', '영하권 기온이에요']);
+
+  return items;
+}
+
+function renderChecklist(cur, today){
+  const items = packingList(cur, today);
+  const rows = items.map(([icon, text, why]) => `
+    <div class="check-item">
+      <span class="icon">${icon}</span>
+      <div><div>${text}</div><div class="why">${why}</div></div>
+    </div>`).join('');
+  return `
+    <div class="section-label">짐 체크리스트</div>
+    <div class="checklist">${rows}</div>
+  `;
+}
+function renderBoard(place, weather){
+  const cur = weather.current;
+  const today = weather.daily;
+  const wmo = WMO[cur.weather_code] || ['❔','정보 없음'];
+  const time = new Date(cur.time || Date.now());
+
+  let timeStr = '';
+  let diffStr = '';
+  if (weather.timezone) {
+    const parts = new Intl.DateTimeFormat('ko-KR', {
+      year:'numeric', month:'long', day:'numeric', weekday:'short',
+      hour:'2-digit', minute:'2-digit', hour12:false, timeZone: weather.timezone
+    }).format(time);
+    timeStr = parts;
+
+    if (typeof weather.utc_offset_seconds === 'number') {
+      const diffMin = Math.round((weather.utc_offset_seconds - 9 * 3600) / 60);
+      if (diffMin === 0) {
+        diffStr = '한국과 시차 없음';
+      } else {
+        const abs = Math.abs(diffMin);
+        const h = Math.floor(abs / 60);
+        const m = abs % 60;
+        const label = (h ? h + '시간' : '') + (m ? ' ' + m + '분' : '');
+        diffStr = '한국보다 ' + label + (diffMin < 0 ? ' 느려요' : ' 빨라요');
+      }
+    }
+  }
+
+  const rainPct = today ? today.precipitation_probability_max[0] : null;
+  const uv = today ? Math.round(today.uv_index_max[0]) : null;
+  const sunrise = today ? today.sunrise[0].slice(11,16) : null;
+  const sunset = today ? today.sunset[0].slice(11,16) : null;
+
+  return `
+    <div class="board">
+      <div class="board-top">
+        <div>
+          <div class="board-city">${place.name}${place.admin1 ? ' · ' + place.admin1 : ''}</div>
+          <div class="board-country mono">${place.country || ''}</div>
+        </div>
+        <div class="board-time-wrap">
+          <div class="board-time mono">${timeStr}</div>
+          ${diffStr ? `<div class="board-diff mono">${diffStr}</div>` : ''}
+        </div>
+      </div>
+      <div class="flap-row">
+        <div class="flap-temp">${Math.round(cur.temperature_2m)}°</div>
+        <div class="flap-cond"><span class="icon">${wmo[0]}</span>${wmo[1]}</div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat">체감온도<b>${Math.round(cur.apparent_temperature ?? cur.temperature_2m)}°</b></div>
+        <div class="stat">습도<b>${cur.relative_humidity_2m}%</b></div>
+        <div class="stat">풍속<b>${cur.wind_speed_10m} km/h</b></div>
+        <div class="stat">강수확률<b>${rainPct !== null ? rainPct + '%' : '-'}</b></div>
+        <div class="stat">자외선지수<b>${uv !== null ? uv : '-'}</b></div>
+        <div class="stat">일출·일몰<b>${sunrise && sunset ? sunrise + ' / ' + sunset : '-'}</b></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderForecast(weather){
+  const d = weather.daily;
+  if (!d) return '';
+  const days = d.time.map((dateStr, i) => {
+    const date = new Date(dateStr);
+    const label = i === 0 ? '오늘' :
+      new Intl.DateTimeFormat('ko-KR', { weekday:'short' }).format(date);
+    const wmo = WMO[d.weather_code[i]] || ['❔',''];
+    const rain = d.precipitation_probability_max[i];
+    return `
+      <div class="forecast-day">
+        <div class="d-label">${label}</div>
+        <div class="d-icon">${wmo[0]}</div>
+        <div class="d-temp"><span class="max">${Math.round(d.temperature_2m_max[i])}°</span> / <span class="min">${Math.round(d.temperature_2m_min[i])}°</span></div>
+        <div class="d-rain">💧${rain}%</div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="section-label">10일 예보</div>
+    <div class="forecast-strip">${days}</div>
+  `;
+}
+
+function renderWebcams(webcamData, place){
+  if (webcamData.skipped) {
+    return `
+      <div class="section-label">근처 웹캠</div>
+      <div class="empty-state">
+        웹캠 기능이 아직 설정되지 않았어요 (코드 상단의 WINDY_API_KEY 값을 채워주세요).<br>
+        키 없이도 <a href="https://www.windy.com/webcams" target="_blank" rel="noopener">windy.com/webcams</a>에서 직접 검색할 수 있어요.
+      </div>`;
+  }
+  if (webcamData.error) {
+    return `
+      <div class="section-label">근처 웹캠</div>
+      <div class="empty-state">
+        웹캠을 불러오지 못했어요 (${webcamData.error}). API 키가 올바른지 확인해주세요.<br>
+        <a href="https://www.windy.com/webcams" target="_blank" rel="noopener">windy.com/webcams</a>에서 직접 찾아볼 수도 있어요.
+      </div>`;
+  }
+  const list = webcamData.webcams || [];
+  if (!list.length) {
+    return `
+      <div class="section-label">근처 웹캠</div>
+      <div class="empty-state">
+        ${place.name} 근처 30km 안에는 공개된 웹캠이 없어요.<br>
+        유럽·일본·미국은 대체로 잘 잡히지만, 중국·중동 등 일부 국가는 등록된 웹캠 자체가 적어서 안 보일 수 있어요.
+      </div>`;
+  }
+  const cards = list.map((cam, i) => {
+    const img = cam.images && cam.images.current ? cam.images.current.preview : '';
+    const title = cam.title || '이름 없는 웹캠';
+    const loc = [cam.location && cam.location.city, cam.location && cam.location.country]
+      .filter(Boolean).join(', ');
+    const detailUrl = cam.urls && cam.urls.detail ? cam.urls.detail : 'https://www.windy.com/webcams';
+    const embed = (cam.player && cam.player.live && cam.player.live.available && cam.player.live.embed)
+      ? cam.player.live.embed
+      : (cam.player && cam.player.day && cam.player.day.available && cam.player.day.embed)
+        ? cam.player.day.embed
+        : null;
+    return `
+      <div class="cam-card" data-embed="${embed || ''}" data-detail="${detailUrl}" data-idx="${i}">
+        ${img ? `<img src="${img}" alt="${title}" loading="lazy">` : ''}
+        <div class="cam-meta">
+          <div class="cam-title">${title}</div>
+          <div class="cam-loc">${loc}</div>
+        </div>
+      </div>`;
+  }).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.cam-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const embed = card.dataset.embed;
+        if (typeof gtag === 'function') {
+          gtag('event', 'webcam_click', { has_video: !!embed });
+        }
+        if (embed) {
+          card.innerHTML = `<iframe src="${embed}" style="width:100%;aspect-ratio:4/3;border:0;display:block;" allow="autoplay" loading="lazy"></iframe>` + card.querySelector('.cam-meta').outerHTML;
+        } else {
+          window.open(card.dataset.detail, '_blank', 'noopener');
+        }
+      }, { once: true });
+    });
+  }, 0);
+  return `
+    <div class="section-label">근처 웹캠 · ${list.length}개</div>
+    <div class="cams-grid">${cards}</div>
+    <div class="credit">Webcams provided by <a href="https://www.windy.com/" target="_blank" rel="noopener">windy.com</a></div>
+  `;
+}
+
+async function loadPlace(place){
+  candidatesEl.innerHTML = '';
+  resultEl.innerHTML = '';
+  setStatus('날씨 불러오는 중...');
+  searchBtn.disabled = true;
+  if (typeof gtag === 'function') {
+    gtag('event', 'city_search', {
+      city_name: place.name,
+      country: place.country || '',
+    });
+  }
+  saveRecentCity(place);
+  try {
+    const [weather, webcams] = await Promise.all([
+      getWeather(place.latitude, place.longitude),
+      getWebcams(place.latitude, place.longitude, WINDY_API_KEY)
+    ]);
+    setStatus('');
+    resultEl.innerHTML = renderBoard(place, weather) + renderChecklist(weather.current, weather.daily) + renderForecast(weather) + renderWebcams(webcams, place);
+  } catch (e) {
+    setStatus('정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.', true);
+  } finally {
+    searchBtn.disabled = false;
+  }
+}
+
+function showCandidates(places){
+  candidatesEl.innerHTML = places.map((p, i) => `
+    <div class="candidate" data-idx="${i}">
+      <span>${p.name}${p.admin1 ? ' · ' + p.admin1 : ''}</span>
+      <span class="loc mono">${p.country || ''}</span>
+    </div>
+  `).join('');
+  Array.from(candidatesEl.children).forEach((el, i) => {
+    el.addEventListener('click', () => loadPlace(places[i]));
+  });
+}
+
+async function runSearch(){
+  const q = cityInput.value.trim();
+  if (!q) { setStatus('도시 이름을 입력해주세요.', true); return; }
+  candidatesEl.innerHTML = '';
+  resultEl.innerHTML = '';
+  setStatus('도시 찾는 중...');
+  searchBtn.disabled = true;
+  try {
+    const places = await geocode(q);
+    searchBtn.disabled = false;
+    if (!places.length) {
+      setStatus('해당 이름의 도시를 찾지 못했어요. 영문 이름으로도 시도해보세요.', true);
+      return;
+    }
+    if (places.length === 1) {
+      setStatus('국가를 확인하고 선택해주세요.');
+      showCandidates(places);
+      return;
+    }
+    setStatus('여러 곳이 검색됐어요. 국가까지 확인하고 선택해주세요.');
+    showCandidates(places);
+  } catch (e) {
+    searchBtn.disabled = false;
+    setStatus('검색 중 오류: ' + (e && e.message ? e.message : e), true);
+  }
+}
+
+searchBtn.addEventListener('click', runSearch);
+cityInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+</script>
+</body>
+</html>
