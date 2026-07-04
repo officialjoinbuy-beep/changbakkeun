@@ -110,7 +110,7 @@
   @media (max-width:480px){.cams-grid{grid-template-columns:1fr;}}
   .cam-card{
     background:var(--navy-2);border:1px solid var(--split-line);border-radius:8px;
-    overflow:hidden;display:block;text-decoration:none;color:inherit;
+    overflow:hidden;cursor:pointer;
   }
   .cam-card img{width:100%;display:block;aspect-ratio:4/3;object-fit:cover;background:#1a1a1a;}
   .cam-meta{padding:8px 10px;font-size:12px;}
@@ -281,7 +281,7 @@ async function getWeather(lat, lon){
 async function getWebcams(lat, lon, key){
   if (!key || key === 'YOUR_WINDY_API_KEY_HERE') return { skipped:true };
   const url = 'https://api.windy.com/webcams/api/v3/webcams?nearby=' +
-    lat + ',' + lon + ',30&limit=6&include=images,location,urls';
+    lat + ',' + lon + ',30&limit=6&include=images,location,urls,player';
   try {
     const res = await fetch(url, { headers: { 'x-windy-api-key': key } });
     if (!res.ok) throw new Error('webcam http ' + res.status);
@@ -430,21 +430,38 @@ function renderWebcams(webcamData, place){
         유럽·일본·미국은 대체로 잘 잡히지만, 중국·중동 등 일부 국가는 등록된 웹캠 자체가 적어서 안 보일 수 있어요.
       </div>`;
   }
-  const cards = list.map(cam => {
+  const cards = list.map((cam, i) => {
     const img = cam.images && cam.images.current ? cam.images.current.preview : '';
     const title = cam.title || '이름 없는 웹캠';
     const loc = [cam.location && cam.location.city, cam.location && cam.location.country]
       .filter(Boolean).join(', ');
     const detailUrl = cam.urls && cam.urls.detail ? cam.urls.detail : 'https://www.windy.com/webcams';
+    const embed = (cam.player && cam.player.live && cam.player.live.available && cam.player.live.embed)
+      ? cam.player.live.embed
+      : (cam.player && cam.player.day && cam.player.day.available && cam.player.day.embed)
+        ? cam.player.day.embed
+        : null;
     return `
-      <a class="cam-card" href="${detailUrl}" target="_blank" rel="noopener">
+      <div class="cam-card" data-embed="${embed || ''}" data-detail="${detailUrl}" data-idx="${i}">
         ${img ? `<img src="${img}" alt="${title}" loading="lazy">` : ''}
         <div class="cam-meta">
           <div class="cam-title">${title}</div>
           <div class="cam-loc">${loc}</div>
         </div>
-      </a>`;
+      </div>`;
   }).join('');
+  setTimeout(() => {
+    document.querySelectorAll('.cam-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const embed = card.dataset.embed;
+        if (embed) {
+          card.innerHTML = `<iframe src="${embed}" style="width:100%;aspect-ratio:4/3;border:0;display:block;" allow="autoplay" loading="lazy"></iframe>` + card.querySelector('.cam-meta').outerHTML;
+        } else {
+          window.open(card.dataset.detail, '_blank', 'noopener');
+        }
+      }, { once: true });
+    });
+  }, 0);
   return `
     <div class="section-label">근처 웹캠 · ${list.length}개</div>
     <div class="cams-grid">${cards}</div>
