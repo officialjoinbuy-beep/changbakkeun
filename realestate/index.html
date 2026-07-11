@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>등기 세이프 — 등기부등본 위험도 분석</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --ink: #121b24;
+    --navy: #16232f;
+    --navy-deep: #0d151d;
+    --paper: #ece5d3;
+    --paper-dim: #d9d0b8;
+    --muted: #8fa2ac;
+    --hair: rgba(236,229,211,0.14);
+    --red: #b8382b;
+    --red-deep: #8c2a20;
+    --gold: #b8863b;
+    --teal: #2f6f5e;
+    --serif: 'Noto Serif KR', serif;
+    --sans: 'Noto Sans KR', sans-serif;
+    --mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--navy-deep);
+    color:var(--paper);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .ledger-bg{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image: repeating-linear-gradient(180deg, transparent 0 39px, var(--hair) 39px 40px);
+    opacity:0.5;
+  }
+  .wrap{position:relative; z-index:1; max-width:820px; margin:0 auto; padding:0 22px 120px;}
+
+  header.hero{padding:72px 0 40px; border-bottom:1px solid var(--hair);}
+  .eyebrow{
+    font-family:var(--mono); font-size:12px; letter-spacing:0.16em; color:var(--gold);
+    text-transform:uppercase; margin-bottom:18px; display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{content:''; width:22px; height:1px; background:var(--gold);}
+  h1{
+    font-family:var(--serif); font-weight:900; font-size:44px; line-height:1.25; margin:0 0 20px;
+    letter-spacing:-0.01em;
+  }
+  h1 span{color:var(--gold);}
+  .lede{font-size:16px; color:var(--muted); max-width:560px; margin:0 0 8px;}
+  .lede b{color:var(--paper); font-weight:500;}
+
+  section{padding:52px 0; border-bottom:1px solid var(--hair);}
+  section:last-of-type{border-bottom:none;}
+  .sec-label{
+    font-family:var(--mono); font-size:12px; color:var(--muted); letter-spacing:0.1em;
+    margin-bottom:14px; text-transform:uppercase;
+  }
+
+  /* upload tray */
+  .tray{
+    border:1.5px dashed rgba(236,229,211,0.32);
+    border-radius:2px;
+    padding:44px 28px;
+    text-align:center;
+    transition:border-color .2s, background .2s;
+    cursor:pointer;
+    background: rgba(236,229,211,0.02);
+  }
+  .tray:hover, .tray.drag{border-color: var(--gold); background: rgba(184,134,59,0.06);}
+  .tray input{display:none;}
+  .tray-icon{font-family:var(--serif); font-size:30px; color:var(--gold); margin-bottom:10px;}
+  .tray-title{font-weight:500; font-size:16px; margin-bottom:6px;}
+  .tray-sub{font-size:13px; color:var(--muted);}
+  .demo-link{
+    display:inline-block; margin-top:18px; font-family:var(--mono); font-size:12.5px;
+    color:var(--paper); text-decoration:underline; text-underline-offset:3px; text-decoration-color: var(--muted);
+    cursor:pointer; background:none; border:none; padding:0;
+  }
+  .filename-chip{
+    display:inline-flex; align-items:center; gap:8px; margin-top:16px;
+    font-family:var(--mono); font-size:12.5px; color:var(--paper);
+    background:rgba(236,229,211,0.08); padding:7px 12px; border-radius:2px;
+  }
+
+  /* manual inputs */
+  .field-row{display:flex; gap:16px; flex-wrap:wrap; margin-top:6px;}
+  .field{flex:1; min-width:200px;}
+  .field label{display:block; font-size:12.5px; color:var(--muted); margin-bottom:7px;}
+  .field .unit-input{position:relative;}
+  .field input{
+    width:100%; background:transparent; border:none; border-bottom:1px solid rgba(236,229,211,0.28);
+    color:var(--paper); font-family:var(--mono); font-size:17px; padding:8px 44px 8px 2px;
+    outline:none; transition:border-color .2s;
+  }
+  .field input:focus{border-color:var(--gold);}
+  .field .unit{position:absolute; right:2px; top:9px; font-size:13px; color:var(--muted); font-family:var(--sans);}
+
+  .lookup-btn{
+    flex-shrink:0; padding:11px 16px; background:transparent; color:var(--paper);
+    border:1px solid rgba(236,229,211,0.35); border-radius:2px; font-family:var(--sans);
+    font-size:13.5px; font-weight:500; cursor:pointer; transition:border-color .2s, background .2s;
+    white-space:nowrap;
+  }
+  .lookup-btn:hover{border-color:var(--gold); color:var(--gold);}
+  .lookup-btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .lookup-status{
+    margin-top:10px; font-size:12.5px; color:var(--muted); font-family:var(--mono);
+    min-height:16px; line-height:1.6;
+  }
+  .lookup-status.found{color:var(--gold);}
+  .lookup-status.error{color:var(--red);}
+
+  .analyze-btn{
+    margin-top:34px; width:100%; padding:16px; background:var(--gold); color:var(--navy-deep);
+    border:none; border-radius:2px; font-family:var(--sans); font-weight:700; font-size:15.5px;
+    letter-spacing:0.02em; cursor:pointer; transition:background .2s, transform .1s;
+  }
+  .analyze-btn:hover{background:#c99a4c;}
+  .analyze-btn:active{transform:scale(0.995);}
+  .analyze-btn:disabled{background:rgba(236,229,211,0.15); color:var(--muted); cursor:not-allowed;}
+
+  .disclaimer{
+    font-size:12px; color:var(--muted); margin-top:14px; line-height:1.7;
+    border-left:2px solid var(--hair); padding-left:12px;
+  }
+
+  /* results */
+  #results{display:none;}
+  .case-file{
+    background:var(--paper); color:var(--ink); border-radius:2px; padding:0; overflow:hidden;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
+    position:relative;
+  }
+  .case-head{
+    padding:26px 30px 20px; border-bottom:1px solid rgba(18,27,36,0.12);
+    display:flex; justify-content:space-between; align-items:flex-start; gap:20px;
+  }
+  .case-title{font-family:var(--mono); font-size:11.5px; color:#6b6250; letter-spacing:0.08em; text-transform:uppercase;}
+  .case-title b{display:block; font-family:var(--serif); font-size:20px; color:var(--ink); font-weight:700; letter-spacing:0; margin-top:4px; text-transform:none;}
+
+  .stamp{
+    width:92px; height:92px; border-radius:50%; border:3.5px solid var(--red);
+    color:var(--red); display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    font-family:var(--serif); font-weight:900; font-size:15px; text-align:center; line-height:1.25;
+    transform:rotate(-14deg) scale(0); opacity:0;
+    box-shadow: inset 0 0 0 3px rgba(184,56,43,0.15);
+    transition: transform .55s cubic-bezier(.34,1.56,.64,1), opacity .4s;
+  }
+  .stamp.show{transform:rotate(-14deg) scale(1); opacity:0.92;}
+  .stamp.safe{border-color:var(--teal); color:var(--teal); box-shadow: inset 0 0 0 3px rgba(47,111,94,0.15);}
+  .stamp.caution{border-color:var(--gold); color:var(--gold); box-shadow: inset 0 0 0 3px rgba(184,134,59,0.15);}
+
+  .case-body{padding:26px 30px 30px;}
+  .verdict-line{font-family:var(--serif); font-size:19px; font-weight:700; margin:0 0 6px;}
+  .verdict-sub{font-size:13.5px; color:#5c5443; margin:0 0 26px;}
+
+  .gauge-wrap{margin-bottom:28px;}
+  .gauge-label{display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; color:#6b6250; margin-bottom:8px;}
+  .gauge-track{height:8px; background:rgba(18,27,36,0.1); border-radius:4px; overflow:hidden;}
+  .gauge-fill{height:100%; border-radius:4px; transition:width 1s cubic-bezier(.4,0,.2,1); width:0%;}
+
+  .findings{display:flex; flex-direction:column; gap:10px;}
+  .finding{
+    display:flex; gap:14px; padding:14px 16px; border-radius:2px; border:1px solid rgba(18,27,36,0.1);
+    background:rgba(18,27,36,0.02);
+  }
+  .finding.risk{border-color:rgba(184,56,43,0.35); background:rgba(184,56,43,0.05);}
+  .finding.warn{border-color:rgba(184,134,59,0.35); background:rgba(184,134,59,0.05);}
+  .finding.ok{border-color:rgba(47,111,94,0.3); background:rgba(47,111,94,0.05);}
+  .f-dot{width:8px; height:8px; border-radius:50%; margin-top:6px; flex-shrink:0;}
+  .finding.risk .f-dot{background:var(--red);}
+  .finding.warn .f-dot{background:var(--gold);}
+  .finding.ok .f-dot{background:var(--teal);}
+  .f-title{font-weight:700; font-size:14px; margin-bottom:3px;}
+  .f-desc{font-size:13px; color:#5c5443;}
+
+  .raw-toggle{
+    margin-top:22px; font-family:var(--mono); font-size:12px; color:#6b6250;
+    cursor:pointer; text-decoration:underline; text-underline-offset:3px;
+  }
+  .raw-box{
+    display:none; margin-top:12px; background:rgba(18,27,36,0.04); border-radius:2px; padding:14px 16px;
+    font-family:var(--mono); font-size:11.5px; color:#4a4436; max-height:220px; overflow-y:auto; white-space:pre-wrap;
+  }
+
+  footer{text-align:center; padding:40px 0 10px; font-size:12px; color:var(--muted); font-family:var(--mono);}
+
+  @media(max-width:560px){
+    h1{font-size:32px;}
+    .case-head{flex-direction:column;}
+    .stamp{align-self:flex-end; margin-top:-8px;}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+</style>
+</head>
+<body>
+<div class="ledger-bg"></div>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">등기 세이프 · 계약 전 3분 점검</div>
+    <h1>등기부등본, <span>읽지 말고</span><br>판단하세요.</h1>
+    <p class="lede">근저당·가압류·신탁 같은 용어를 몰라도 괜찮습니다.<br>PDF 한 장이면 <b>안전 · 주의 · 위험</b> 3단계로 정리해 드립니다.</p>
+  </header>
+
+  <section id="upload-section">
+    <div class="sec-label">STEP 1 — 등기부등본 업로드</div>
+    <label class="tray" id="tray" for="file-input">
+      <input type="file" id="file-input" accept="application/pdf">
+      <div class="tray-icon">⎘</div>
+      <div class="tray-title">PDF 파일을 끌어다 놓거나 탭하여 선택</div>
+      <div class="tray-sub">텍스트 기반 등기부등본 PDF (열람용/발급용 모두 가능)</div>
+      <div id="filename-area"></div>
+    </label>
+    <button class="demo-link" id="demo-btn" type="button">파일이 없다면 → 샘플 데이터로 체험해보기</button>
+  </section>
+
+  <section id="input-section">
+    <div class="sec-label">STEP 2 — 계약 조건 입력 (정확도를 높입니다)</div>
+    <div class="field-row">
+      <div class="field">
+        <label>내 보증금 / 매매가</label>
+        <div class="unit-input"><input type="text" inputmode="numeric" id="deposit" placeholder="예: 25000"><span class="unit">만원</span></div>
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:22px;">
+      <label>매물 주소 (시세 자동 조회)</label>
+      <div style="display:flex; gap:10px; align-items:flex-end;">
+        <div class="unit-input" style="flex:1;"><input type="text" id="address" placeholder="예: 서울 마포구 OO동 123-45"></div>
+        <button class="lookup-btn" id="lookup-btn" type="button">시세 조회</button>
+      </div>
+      <div id="lookup-status" class="lookup-status"></div>
+    </div>
+
+    <div class="field-row" style="margin-top:18px;">
+      <div class="field">
+        <label>해당 매물 시세</label>
+        <div class="unit-input"><input type="text" inputmode="numeric" id="marketValue" placeholder="자동 조회 또는 직접 입력"><span class="unit">만원</span></div>
+      </div>
+    </div>
+    <button class="analyze-btn" id="analyze-btn" disabled>등기부등본 분석하기</button>
+    <p class="disclaimer">본 서비스는 등기부등본에 기재된 정보를 기준으로 한 참고용 분석이며, 법적 자문을 대체하지 않습니다. 업로드한 파일은 서버에 저장되지 않고 브라우저 내에서만 처리됩니다.</p>
+  </section>
+
+  <section id="results">
+    <div class="sec-label">STEP 3 — 분석 결과</div>
+    <div class="case-file">
+      <div class="case-head">
+        <div class="case-title">RISK ASSESSMENT REPORT<b id="verdict-word">분석중</b></div>
+        <div class="stamp" id="stamp"><span id="stamp-text">확인중</span></div>
+      </div>
+      <div class="case-body">
+        <p class="verdict-line" id="verdict-line"></p>
+        <p class="verdict-sub" id="verdict-sub"></p>
+
+        <div class="gauge-wrap" id="gauge-wrap">
+          <div class="gauge-label"><span>근저당·보증금 합계 / 시세</span><span id="gauge-pct">—</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+        </div>
+
+        <div class="findings" id="findings"></div>
+
+        <div class="raw-toggle" id="raw-toggle">추출된 원문 텍스트 보기 ▾</div>
+        <div class="raw-box" id="raw-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>ETG-SAFE · 참고용 분석 도구 · 최종 판단은 전문가와 함께 하세요</footer>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+const tray = document.getElementById('tray');
+const fileInput = document.getElementById('file-input');
+const filenameArea = document.getElementById('filename-area');
+const analyzeBtn = document.getElementById('analyze-btn');
+const demoBtn = document.getElementById('demo-btn');
+
+let extractedText = null;
+
+const SAMPLE_TEXT = `
+표제부 (1동의 건물의 표시)
+서울특별시 마포구 OO동 123-45 다세대주택 제3층 제301호
+
+【갑구】 (소유권에 관한 사항)
+순위번호 1 소유권보존 2015년3월10일 소유자 김OO
+순위번호 2 소유권이전 2023년11월2일 매매 소유자 이OO
+순위번호 3 소유권이전 2024년8월19일 매매 소유자 박OO 신탁회사 주식회사 OO자산신탁
+
+【을구】 (소유권 이외의 권리에 관한 사항)
+순위번호 1 근저당권설정 2023년11월2일 채권최고액 금390,000,000원 채무자 박OO 근저당권자 주식회사 OO은행
+순위번호 2 가압류 2024년9월1일 청구금액 금52,000,000원 채권자 OOO
+`;
+
+function setFile(name){
+  filenameArea.innerHTML = '<div class="filename-chip">✓ ' + name + '</div>';
+  analyzeBtn.disabled = false;
+}
+
+fileInput.addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  setFile(file.name);
+  extractedText = await extractPdfText(file);
+});
+
+['dragover','dragenter'].forEach(ev => tray.addEventListener(ev, e => { e.preventDefault(); tray.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => tray.addEventListener(ev, e => { e.preventDefault(); tray.classList.remove('drag'); }));
+tray.addEventListener('drop', async (e) => {
+  const file = e.dataTransfer.files[0];
+  if(!file || file.type !== 'application/pdf') return;
+  setFile(file.name);
+  extractedText = await extractPdfText(file);
+});
+
+demoBtn.addEventListener('click', () => {
+  extractedText = SAMPLE_TEXT;
+  setFile('샘플_등기부등본.pdf (데모)');
+  document.getElementById('deposit').value = '25000';
+  document.getElementById('marketValue').value = '40000';
+});
+
+async function extractPdfText(file){
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+    let text = '';
+    for(let i=1;i<=pdf.numPages;i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(it => it.str).join(' ') + '\n';
+    }
+    return text;
+  }catch(err){
+    console.error(err);
+    alert('PDF 텍스트를 읽는 중 문제가 발생했습니다. 텍스트 기반 PDF인지 확인해주세요.');
+    return '';
+  }
+}
+
+const lookupBtn = document.getElementById('lookup-btn');
+const lookupStatus = document.getElementById('lookup-status');
+
+lookupBtn.addEventListener('click', async () => {
+  const address = document.getElementById('address').value.trim();
+  if(!address){ lookupStatus.textContent = '주소를 먼저 입력해주세요.'; lookupStatus.className='lookup-status error'; return; }
+
+  lookupBtn.disabled = true;
+  lookupStatus.className = 'lookup-status';
+  lookupStatus.textContent = '실거래가·시세 정보를 검색하는 중입니다…';
+
+  try{
+    const res = await fetch('/api/price?address=' + encodeURIComponent(address));
+    const data = await res.json();
+
+    if(!res.ok || !data.marketValueManwon){
+      lookupStatus.className = 'lookup-status error';
+      lookupStatus.textContent = (data.error || '시세를 찾지 못했습니다.') + ' 직접 입력해주세요.';
+      return;
+    }
+
+    document.getElementById('marketValue').value = data.marketValueManwon;
+    lookupStatus.className = 'lookup-status found';
+    const scopeLabel = data.scope === 'exact' ? '동일 지번 실거래 기준' : '해당 법정동 전체 평균';
+    lookupStatus.textContent = '✓ 약 ' + data.marketValueManwon.toLocaleString() + '만원 (' + scopeLabel + ', 표본 ' + data.sampleCount + '건, 최근 3개월) · ' + data.source + ' — 실제 계약 전 반드시 직접 확인하세요.';
+  }catch(err){
+    console.error(err);
+    lookupStatus.className = 'lookup-status error';
+    lookupStatus.textContent = '조회 중 오류가 발생했습니다. 시세를 직접 입력해주세요.';
+  }finally{
+    lookupBtn.disabled = false;
+  }
+});
+
+analyzeBtn.addEventListener('click', () => {
+  if(!extractedText){ alert('먼저 PDF를 업로드하거나 샘플 데이터를 사용해주세요.'); return; }
+  const deposit = parseFloat(document.getElementById('deposit').value.replace(/,/g,'')) || 0;
+  const marketValue = parseFloat(document.getElementById('marketValue').value.replace(/,/g,'')) || 0;
+  const parsed = parseRegistry(extractedText);
+  renderResult(parsed, deposit, marketValue, extractedText);
+});
+
+function parseRegistry(text){
+  const findings = [];
+  let lienTotal = 0;
+
+  // 근저당권 채권최고액 추출
+  const lienMatches = [...text.matchAll(/채권최고액\s*금?\s*([0-9,]{4,})\s*원/g)];
+  lienMatches.forEach(m => { lienTotal += parseInt(m[1].replace(/,/g,''),10); });
+  if(lienMatches.length){
+    findings.push({level:'warn', title:'근저당권 ' + lienMatches.length + '건 발견', desc:'채권최고액 합계 약 ' + Math.round(lienTotal/10000).toLocaleString() + '만원이 설정되어 있습니다.'});
+  }
+
+  if(/가압류/.test(text)){
+    findings.push({level:'risk', title:'가압류 이력 발견', desc:'채권자가 소유자의 재산을 임의로 처분하지 못하도록 법원이 묶어둔 상태입니다. 계약 전 반드시 원인을 확인하세요.'});
+  }
+  if(/가처분/.test(text)){
+    findings.push({level:'risk', title:'가처분 이력 발견', desc:'소유권 관련 분쟁이 진행 중일 가능성이 있습니다.'});
+  }
+  if(/경매개시결정/.test(text)){
+    findings.push({level:'risk', title:'경매개시결정 이력 발견', desc:'해당 부동산이 경매 절차에 들어간 이력이 있습니다. 매우 주의가 필요합니다.'});
+  }
+  if(/신탁/.test(text)){
+    findings.push({level:'warn', title:'신탁 등기 발견', desc:'소유자가 신탁회사로 되어 있다면, 실제 계약 권한이 신탁회사에 있는지 별도 확인이 필요합니다. 전세사기에서 자주 나타나는 구조입니다.'});
+  }
+
+  const transferDates = [...text.matchAll(/소유권이전[^0-9]{0,15}(\d{4})년\s?(\d{1,2})월\s?(\d{1,2})일/g)];
+  if(transferDates.length >= 2){
+    findings.push({level:'warn', title:'소유권 변동 ' + transferDates.length + '회 확인', desc:'등기부상 소유권이 여러 차례 이전된 이력이 있습니다. 짧은 주기의 반복 매매는 이상 거래의 신호일 수 있습니다.'});
+  }
+
+  if(findings.length === 0){
+    findings.push({level:'ok', title:'특이 권리사항 없음', desc:'근저당·가압류·가처분·경매·신탁 등 주요 위험 키워드가 발견되지 않았습니다.'});
+  }
+
+  return { findings, lienTotal, transferCount: transferDates.length };
+}
+
+function renderResult(parsed, deposit, marketValue, rawText){
+  const results = document.getElementById('results');
+  results.style.display = 'block';
+
+  const hasRisk = parsed.findings.some(f => f.level === 'risk');
+  const hasWarn = parsed.findings.some(f => f.level === 'warn');
+  let grade = 'safe', gradeLabel = '안전', stampWord = '안전';
+  if(hasRisk){ grade = 'risk'; gradeLabel = '위험'; stampWord = '위험'; }
+  else if(hasWarn){ grade = 'caution'; gradeLabel = '주의'; stampWord = '주의'; }
+
+  // LTV 계산
+  const depositWon = deposit * 10000, marketWon = marketValue * 10000;
+  let ltv = null;
+  if(marketWon > 0){
+    ltv = ((parsed.lienTotal + depositWon) / marketWon) * 100;
+    if(ltv >= 70 && grade !== 'risk'){ grade='risk'; gradeLabel='위험'; stampWord='위험'; }
+    else if(ltv >= 50 && grade === 'safe'){ grade='caution'; gradeLabel='주의'; stampWord='주의'; }
+  }
+
+  document.getElementById('verdict-word').textContent = gradeLabel;
+  document.getElementById('verdict-line').textContent =
+    grade === 'safe' ? '현재까지 확인된 주요 위험 신호가 없습니다.' :
+    grade === 'caution' ? '주의가 필요한 항목이 발견되었습니다.' :
+    '위험 신호가 발견되었습니다. 계약 전 반드시 재확인하세요.';
+  document.getElementById('verdict-sub').textContent =
+    '등기부등본 기재 내용과 입력하신 금액을 기준으로 한 참고용 분석 결과입니다.';
+
+  const stamp = document.getElementById('stamp');
+  stamp.className = 'stamp ' + grade;
+  document.getElementById('stamp-text').textContent = stampWord;
+
+  const gaugeWrap = document.getElementById('gauge-wrap');
+  if(ltv !== null){
+    gaugeWrap.style.display='block';
+    const fill = document.getElementById('gauge-fill');
+    const pct = Math.min(ltv, 130);
+    document.getElementById('gauge-pct').textContent = ltv.toFixed(0) + '%';
+    fill.style.background = ltv >= 70 ? 'var(--red)' : ltv >= 50 ? 'var(--gold)' : 'var(--teal)';
+    requestAnimationFrame(() => { fill.style.width = Math.min(pct,100) + '%'; });
+  } else {
+    gaugeWrap.style.display = 'none';
+  }
+
+  const findingsEl = document.getElementById('findings');
+  findingsEl.innerHTML = '';
+  parsed.findings.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'finding ' + f.level;
+    div.innerHTML = '<div class="f-dot"></div><div><div class="f-title">' + f.title + '</div><div class="f-desc">' + f.desc + '</div></div>';
+    findingsEl.appendChild(div);
+  });
+
+  document.getElementById('raw-box').textContent = rawText.trim().slice(0, 4000);
+
+  setTimeout(() => stamp.classList.add('show'), 150);
+  results.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+document.getElementById('raw-toggle').addEventListener('click', () => {
+  const box = document.getElementById('raw-box');
+  const isOpen = box.style.display === 'block';
+  box.style.display = isOpen ? 'none' : 'block';
+  document.getElementById('raw-toggle').textContent = isOpen ? '추출된 원문 텍스트 보기 ▾' : '원문 텍스트 숨기기 ▴';
+});
+</script>
+</body>
+</html>
