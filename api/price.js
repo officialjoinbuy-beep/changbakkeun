@@ -94,3 +94,4 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: "시세 조회 중 오류가 발생했습니다." });
   }
 }
+
