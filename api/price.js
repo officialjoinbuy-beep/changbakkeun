@@ -6,7 +6,7 @@
 //   KAKAO_REST_KEY   : 카카오 디벨로퍼스에서 발급한 REST API 키
 //   MOLIT_SERVICE_KEY: 공공데이터포털에서 발급한 "국토교통부_아파트매매 실거래자료" 서비스키 (Decoding 키 사용)
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const address = (req.query.address || "").trim();
   if (!address) {
     return res.status(400).json({ error: "address 파라미터가 필요합니다." });
