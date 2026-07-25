@@ -51,15 +51,36 @@ export default async function handler(req, res) {
     });
 
     let allItems = [];
+    let lastRawResponse = null;
     for (const dealYmd of months) {
       const url =
         `https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev` +
         `?serviceKey=${MOLIT_KEY}&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}&numOfRows=1000&pageNo=1&_type=json`;
       const r = await fetch(url);
-      const j = await r.json();
+      const rawText = await r.text();
+      lastRawResponse = rawText.slice(0, 500);
+      let j;
+      try {
+        j = JSON.parse(rawText);
+      } catch (parseErr) {
+        // 국토부 API가 JSON이 아닌 응답(주로 XML 에러 메시지)을 준 경우
+        return res.status(502).json({
+          error: "국토부 API 응답을 해석할 수 없습니다.",
+          debug_molit_status: r.status,
+          debug_molit_raw: rawText.slice(0, 800),
+          debug_request_url: url.replace(MOLIT_KEY, "[HIDDEN]"),
+        });
+      }
       const items = j?.response?.body?.items?.item;
       if (items) {
         allItems = allItems.concat(Array.isArray(items) ? items : [items]);
+      } else if (j?.response?.header?.resultCode && j.response.header.resultCode !== "00") {
+        // 국토부가 JSON이지만 에러코드를 준 경우 (키 미승인, 파라미터 오류 등)
+        return res.status(502).json({
+          error: "국토부 API에서 오류를 반환했습니다.",
+          debug_molit_resultCode: j.response.header.resultCode,
+          debug_molit_resultMsg: j.response.header.resultMsg,
+        });
       }
     }
 
@@ -96,6 +117,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: "시세 조회 중 오류가 발생했습니다." });
+    return res.status(500).json({ error: "시세 조회 중 오류가 발생했습니다.", debug_message: err.message });
   }
 }
