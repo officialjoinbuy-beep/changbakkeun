@@ -331,23 +331,7 @@
       return;
     }
 
-    const weeklyReduction = beforeWeekly - afterWeekly;
-    const monthlyReduction = weeklyReduction * 4.3;
-    const totalSaving = Math.round(monthlyReduction * duration);
     const totalDrug = drugCost * (duration / (prescriptionWeeks / 4));
-    const netCost = totalDrug - totalSaving;
-
-    const prescriptionCount = Math.round(duration / (prescriptionWeeks / 4));
-    const drugFormula = `(${formatNumber(drugCost)} × ${prescriptionCount}회) `;
-    document.getElementById('totalDrug').innerHTML = `<span style="color:var(--muted);font-size:11px;">${drugFormula}</span>${formatNumber(totalDrug)}원`;
-
-    const savingFormula = `(${formatNumber(weeklyReduction)} × 4.3 × ${duration}개월) `;
-    document.getElementById('totalSaving').innerHTML = `<span style="color:var(--muted);font-size:11px;">${savingFormula}</span>${formatNumber(totalSaving)}원`;
-
-    const netFormula = `(${formatNumber(totalDrug)} - ${formatNumber(totalSaving)}) `;
-    document.getElementById('netCost').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
-    document.getElementById('netCostBreakdown').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
-
     displayResult(duration, beforeWeekly, afterWeekly, totalDrug);
 
     document.getElementById('resultContainer').classList.add('show');
