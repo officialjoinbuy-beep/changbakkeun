@@ -366,6 +366,15 @@ async function extractPdfText(file){
 const lookupBtn = document.getElementById('lookup-btn');
 const lookupStatus = document.getElementById('lookup-status');
 const candidateList = document.getElementById('candidate-list');
+const pyeongField = document.getElementById('pyeong');
+let candidate = null;
+
+pyeongField.addEventListener('change', async () => {
+  if(candidate){
+    lookupStatus.textContent = '시세를 조회하는 중입니다…';
+    await fetchPrice(candidate);
+  }
+});
 
 lookupBtn.addEventListener('click', async () => {
   const address = document.getElementById('address').value.trim();
@@ -387,6 +396,7 @@ lookupBtn.addEventListener('click', async () => {
     }
 
     if(data.candidates.length === 1){
+      candidate = data.candidates[0];
       lookupStatus.textContent = '시세를 조회하는 중입니다…';
       await fetchPrice(data.candidates[0]);
     } else {
@@ -398,6 +408,7 @@ lookupBtn.addEventListener('click', async () => {
         btn.className = 'candidate-item';
         btn.innerHTML = '<b>' + c.sido + ' ' + c.sigungu + '</b> ' + c.label + (c.jibunLabel ? ' (' + c.jibunLabel + ')' : '');
         btn.addEventListener('click', async () => {
+          candidate = c;
           candidateList.innerHTML = '';
           lookupStatus.textContent = '시세를 조회하는 중입니다…';
           lookupBtn.disabled = true;
