@@ -206,36 +206,33 @@
   </div>
 
   <div class="result" id="resultContainer">
-    <div class="result-item">
-      <div class="result-label">📊 실제 순비용</div>
-      <div class="result-value" id="netCost">-</div>
+    <!-- 기간 표시 -->
+    <div style="text-align:center;margin-bottom:32px;padding-bottom:20px;border-bottom:1px solid var(--split-line);">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">선택한 기간</div>
+      <div style="font-size:28px;font-weight:700;color:var(--amber);" id="durationDisplay">-</div>
     </div>
 
-    <div class="result-breakdown">
-      <div class="breakdown-row">
-        <span>총 약물 비용</span>
-        <span id="totalDrug">0원</span>
-      </div>
-      <div class="breakdown-row">
-        <span>절감된 식비</span>
-        <span id="totalSaving">0원</span>
-      </div>
-      <div class="breakdown-row total">
-        <span>실제 순비용</span>
-        <span id="netCostBreakdown">0원</span>
+    <!-- 비용 비교 -->
+    <div style="margin-bottom:32px;">
+      <div style="font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:16px;">💰 비용 비교</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--board);border-radius:6px;padding:20px;text-align:center;border:1px solid var(--split-line);">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">약물 끊으면</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px;" id="periodWithoutDrug">-</div>
+          <div style="font-size:24px;font-weight:700;color:var(--ivory);" id="costWithoutDrug">-</div>
+        </div>
+        <div style="background:rgba(242,194,48,0.08);border-radius:6px;padding:20px;text-align:center;border:1px solid var(--amber-dim);">
+          <div style="font-size:11px;color:var(--amber);margin-bottom:12px;">약물 유지</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:8px;" id="periodWithDrug">-</div>
+          <div style="font-size:24px;font-weight:700;color:var(--amber);" id="costWithDrug">-</div>
+        </div>
       </div>
     </div>
 
-    <div class="comparisons" id="comparisonSection">
-      <div class="comparison-title">💡 비용 비교</div>
-      <div id="comparisonList"></div>
-    </div>
-
-    <div class="evaluation" id="evaluation"></div>
-
-    <div style="background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:20px;margin-top:20px;text-align:center;">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">사용 기간 동안</div>
-      <div style="font-size:24px;font-weight:700;color:#4CAF50;" id="summaryText">-</div>
+    <!-- 결론 -->
+    <div style="background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:24px;text-align:center;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">💡 결론</div>
+      <div style="font-size:16px;color:var(--ivory);line-height:1.6;" id="conclusion">-</div>
     </div>
 
     <div class="note">
@@ -246,28 +243,6 @@
 </div>
 
 <script>
-  const savingsComparisons = [
-    { name: '스타벅스 아메리카노', price: 5500, icon: '☕' },
-    { name: '점심 정식', price: 12000, icon: '🍱' },
-    { name: '편의점 도시락', price: 8000, icon: '🍙' },
-    { name: '영화 티켓', price: 14000, icon: '🎬' },
-    { name: '택시 기본요금', price: 3800, icon: '🚕' },
-    { name: '회전초밥 1인분', price: 12000, icon: '🍣' },
-    { name: '카페 라떼', price: 5500, icon: '☕' },
-    { name: '편의점 라면', price: 4000, icon: '🍜' },
-  ];
-
-  const expenseComparisons = [
-    { name: '스타벅스 한 달분', price: 55000, icon: '☕' },
-    { name: '좋은 마스크팩 세트', price: 30000, icon: '🧴' },
-    { name: '에어팟 프로', price: 100000, icon: '🎧' },
-    { name: '겨울옷 한 벌', price: 150000, icon: '🧥' },
-    { name: '게이밍 마우스', price: 200000, icon: '🖱️' },
-    { name: '항공권 (서울-부산)', price: 250000, icon: '✈️' },
-    { name: '월세 일부', price: 500000, icon: '🏠' },
-    { name: '노트북 기초형', price: 800000, icon: '💻' },
-  ];
-
   document.getElementById('drugName').addEventListener('change', (e) => {
     document.getElementById('otherDrugGroup').style.display = e.target.value === 'other' ? 'block' : 'none';
   });
@@ -365,77 +340,38 @@
     document.getElementById('netCost').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
     document.getElementById('netCostBreakdown').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
 
-    generateComparisons(duration, beforeWeekly, afterWeekly, totalDrug);
-    generateEvaluation(netCost, totalDrug);
-    generateSummary(netCost, duration, beforeWeekly, afterWeekly);
+    displayResult(duration, beforeWeekly, afterWeekly, totalDrug);
 
     document.getElementById('resultContainer').classList.add('show');
     document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
   }
 
-  function generateSummary(netCost, duration, beforeWeekly, afterWeekly) {
-    const beforeMonthly = Math.round(beforeWeekly * 4.3);
-    const afterMonthly = Math.round(afterWeekly * 4.3);
-    const summaryEl = document.getElementById('summaryText');
-
-    if(netCost < 0) {
-      summaryEl.innerHTML = `<span style="color:#4CAF50;">월 ${formatNumber(Math.abs(netCost))}원을 절감할 수 있어요!</span>`;
-    } else {
-      const increasePercent = Math.round((netCost / beforeMonthly) * 100);
-      summaryEl.innerHTML = `
-        <div style="margin-bottom:6px;font-size:12px;color:var(--muted);">투약 전 월 지출</div>
-        <div style="margin-bottom:12px;font-size:16px;font-weight:700;color:var(--ivory);">${formatNumber(beforeMonthly)}원</div>
-        <div style="margin-bottom:6px;font-size:12px;color:var(--muted);">투약 후 월 지출</div>
-        <div style="margin-bottom:12px;font-size:16px;font-weight:700;color:var(--ivory);">${formatNumber(beforeMonthly + netCost)}원</div>
-        <div style="padding:10px;background:var(--board);border-radius:4px;text-align:center;color:#ff9800;font-weight:700;">
-          추가 비용: ${formatNumber(netCost)}원 (+${increasePercent}%)
-        </div>
-        <div style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center;">이 정도면 충분히 감당할 수 있어요!</div>
-      `;
-    }
-  }
-
-  function generateComparisons(duration, beforeWeekly, afterWeekly, totalDrug) {
+  function displayResult(duration, beforeWeekly, afterWeekly, totalDrug) {
     const beforeMonthly = Math.round(beforeWeekly * 4.3);
     const afterMonthly = Math.round(afterWeekly * 4.3);
     const withoutDrug = beforeMonthly * duration;
     const withDrug = totalDrug + (afterMonthly * duration);
+    const monthlyCost = Math.round(totalDrug / duration);
+    const monthlyDifference = withDrug - withoutDrug;
 
-    const html = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-        <div style="background:var(--board);border-radius:6px;padding:16px;text-align:center;border:1px solid var(--split-line);">
-          <div style="font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">약물 미사용</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">${duration}개월 식비</div>
-          <div style="font-size:22px;font-weight:700;color:var(--ivory);">${formatNumber(withoutDrug)}원</div>
-        </div>
-        <div style="background:rgba(242,194,48,0.08);border-radius:6px;padding:16px;text-align:center;border:1px solid var(--amber-dim);">
-          <div style="font-size:11px;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">약물 사용</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">약물비 ${formatNumber(totalDrug)}원</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">식비 ${formatNumber(afterMonthly * duration)}원</div>
-          <div style="font-size:22px;font-weight:700;color:var(--amber);">${formatNumber(withDrug)}원</div>
-        </div>
-      </div>`;
-    document.getElementById('comparisonList').innerHTML = html;
-  }
+    // 기간 표시
+    const durationText = duration === 1 ? '1개월' : duration + '개월';
+    document.getElementById('durationDisplay').textContent = durationText;
 
-  function generateEvaluation(netCost, totalDrug) {
-    let text = '';
+    // 약물 끊으면
+    document.getElementById('periodWithoutDrug').textContent = durationText + ' 식비';
+    document.getElementById('costWithoutDrug').textContent = formatNumber(withoutDrug) + '원';
 
-    if(netCost < 0) {
-      text = `<span class="eval-positive">✅ 오히려 돈을 버는 상황입니다!</span><br>
-              식비 절감액이 약물 비용을 초과해서 전체적으로 절감됩니다.`;
-    } else if(netCost < totalDrug * 0.3) {
-      text = `<span class="eval-neutral">🎯 충분히 할 가치가 있습니다!</span><br>
-              식비 절감을 고려하면 부담이 크지 않습니다.`;
-    } else if(netCost < totalDrug * 0.6) {
-      text = `<span class="eval-neutral">💭 조금 생각해볼 만합니다.</span><br>
-              어느 정도 추가 비용이 있지만 감당할 수 있는 수준입니다.`;
-    } else {
-      text = `<span class="eval-negative">⚠️ 좀 부담스러울 수 있습니다.</span><br>
-              식비 절감보다 약물 비용이 훨씬 큽니다.`;
-    }
+    // 약물 유지
+    document.getElementById('periodWithDrug').textContent = durationText + ' 비용';
+    document.getElementById('costWithDrug').textContent = formatNumber(withDrug) + '원';
 
-    document.getElementById('evaluation').innerHTML = text;
+    // 결론
+    const conclusionText = `
+      <div style="margin-bottom:8px;">월 <strong style="color:var(--amber);">${formatNumber(monthlyCost)}원</strong>의 약물비로</div>
+      <div>매달 <strong style="color:#4CAF50;">${formatNumber(monthlyDifference)}원</strong>을 추가로 지출하면<br>약물을 유지할 수 있습니다.</div>
+    `;
+    document.getElementById('conclusion').innerHTML = conclusionText;
   }
 </script>
 </body>
