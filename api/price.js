@@ -91,18 +91,17 @@ export default async function handler(req, res) {
     // ---------- 3. 지번/동 이름으로 유사 매물 우선 필터링, 없으면 지역 전체 평균 ----------
     const normalizedJibun = jibun.replace(/[^0-9-]/g, "");
     let matched = allItems.filter((it) => {
-      const itJibun = (it.지번 || "").toString().replace(/[^0-9-]/g, "");
+      const itJibun = (it.jibun || "").toString().replace(/[^0-9-]/g, "");
       return normalizedJibun && itJibun === normalizedJibun;
     });
     const usedItems = matched.length > 0 ? matched : allItems;
     const scope = matched.length > 0 ? "exact" : "district";
 
     const prices = usedItems
-      .map((it) => parseInt(String(it.거래금액).replace(/[^0-9]/g, ""), 10))
+      .map((it) => parseInt(String(it.dealAmount).replace(/[^0-9]/g, ""), 10))
       .filter((n) => !isNaN(n));
 
     if (prices.length === 0) {
-      // 디버깅용: 실제로 어떤 필드 구조로 데이터가 오는지 확인
       return res.status(200).json({
         error: "가격 필드를 해석하지 못했습니다.",
         debug_sample_item: usedItems[0],
