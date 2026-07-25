@@ -101,6 +101,15 @@ export default async function handler(req, res) {
       .map((it) => parseInt(String(it.거래금액).replace(/[^0-9]/g, ""), 10))
       .filter((n) => !isNaN(n));
 
+    if (prices.length === 0) {
+      // 디버깅용: 실제로 어떤 필드 구조로 데이터가 오는지 확인
+      return res.status(200).json({
+        error: "가격 필드를 해석하지 못했습니다.",
+        debug_sample_item: usedItems[0],
+        debug_item_count: usedItems.length,
+      });
+    }
+
     const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
