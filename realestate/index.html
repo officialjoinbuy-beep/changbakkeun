@@ -366,62 +366,75 @@ async function extractPdfText(file){
 const lookupBtn = document.getElementById('lookup-btn');
 const lookupStatus = document.getElementById('lookup-status');
 const candidateList = document.getElementById('candidate-list');
-const pyeongField = document.getElementById('pyeong');
 let candidate = null;
+let searchMode = 'address'; // 'address' or 'price'
 
-pyeongField.addEventListener('change', async () => {
-  if(candidate){
-    lookupStatus.textContent = '시세를 조회하는 중입니다…';
-    await fetchPrice(candidate);
-  }
-});
+function switchToPrice() {
+  searchMode = 'price';
+  lookupBtn.textContent = '시세 조회';
+  lookupStatus.textContent = '';
+  lookupStatus.className = '';
+  candidateList.innerHTML = '';
+}
 
 lookupBtn.addEventListener('click', async () => {
-  const address = document.getElementById('address').value.trim();
-  if(!address){ lookupStatus.textContent = '주소를 먼저 입력해주세요.'; lookupStatus.className='lookup-status error'; return; }
+  if(searchMode === 'address') {
+    const address = document.getElementById('address').value.trim();
+    if(!address){ lookupStatus.textContent = '주소를 먼저 입력해주세요.'; lookupStatus.className='lookup-status error'; return; }
 
-  lookupBtn.disabled = true;
-  lookupStatus.className = 'lookup-status';
-  lookupStatus.textContent = '주소를 검색하는 중입니다…';
-  candidateList.innerHTML = '';
+    lookupBtn.disabled = true;
+    lookupStatus.className = 'lookup-status';
+    lookupStatus.textContent = '주소를 검색하는 중입니다…';
+    candidateList.innerHTML = '';
 
-  try{
-    const res = await fetch('/api/geocode?address=' + encodeURIComponent(address));
-    const data = await res.json();
+    try{
+      const res = await fetch('/api/geocode?address=' + encodeURIComponent(address));
+      const data = await res.json();
 
-    if(!res.ok || !data.candidates || data.candidates.length === 0){
-      lookupStatus.className = 'lookup-status error';
-      lookupStatus.textContent = (data.error || '주소를 찾지 못했습니다.') + ' 직접 입력해주세요.';
-      return;
-    }
+      if(!res.ok || !data.candidates || data.candidates.length === 0){
+        lookupStatus.className = 'lookup-status error';
+        lookupStatus.textContent = (data.error || '주소를 찾지 못했습니다.') + ' 직접 입력해주세요.';
+        return;
+      }
 
-    if(data.candidates.length === 1){
-      candidate = data.candidates[0];
-      lookupStatus.textContent = '시세를 조회하는 중입니다…';
-      await fetchPrice(data.candidates[0]);
-    } else {
-      lookupStatus.className = 'lookup-status';
-      lookupStatus.textContent = '동일한 도로명이 여러 곳에 있습니다. 정확한 주소를 선택해주세요.';
-      data.candidates.forEach((c) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'candidate-item';
-        btn.innerHTML = '<b>' + c.sido + ' ' + c.sigungu + '</b> ' + c.label + (c.jibunLabel ? ' (' + c.jibunLabel + ')' : '');
-        btn.addEventListener('click', async () => {
-          candidate = c;
-          candidateList.innerHTML = '';
-          lookupStatus.textContent = '시세를 조회하는 중입니다…';
-          lookupBtn.disabled = true;
-          await fetchPrice(c);
+      if(data.candidates.length === 1){
+        candidate = data.candidates[0];
+        switchToPrice();
+        lookupStatus.textContent = '주소가 선택되었습니다. 평형을 입력한 후 "시세 조회"를 클릭해주세요.';
+        lookupStatus.className = 'lookup-status';
+      } else {
+        lookupStatus.className = 'lookup-status';
+        lookupStatus.textContent = '동일한 도로명이 여러 곳에 있습니다. 정확한 주소를 선택해주세요.';
+        data.candidates.forEach((c) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'candidate-item';
+          btn.innerHTML = '<b>' + c.sido + ' ' + c.sigungu + '</b> ' + c.label + (c.jibunLabel ? ' (' + c.jibunLabel + ')' : '');
+          btn.addEventListener('click', async () => {
+            candidate = c;
+            switchToPrice();
+            lookupStatus.textContent = '주소가 선택되었습니다. 평형을 입력한 후 "시세 조회"를 클릭해주세요.';
+            lookupStatus.className = 'lookup-status';
+          });
+          candidateList.appendChild(btn);
         });
-        candidateList.appendChild(btn);
-      });
-    }
+      }
   }catch(err){
     console.error(err);
     lookupStatus.className = 'lookup-status error';
     lookupStatus.textContent = '조회 중 오류가 발생했습니다. 시세를 직접 입력해주세요.';
   }finally{
+    lookupBtn.disabled = false;
+  }
+  } else if(searchMode === 'price') {
+    if(!candidate){
+      lookupStatus.textContent = '주소를 먼저 선택해주세요.';
+      lookupStatus.className='lookup-status error';
+      return;
+    }
+    lookupBtn.disabled = true;
+    lookupStatus.textContent = '시세를 조회하는 중입니다…';
+    await fetchPrice(candidate);
     lookupBtn.disabled = false;
   }
 });
