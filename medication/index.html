@@ -215,8 +215,8 @@
       </div>
     </div>
 
-    <div class="comparisons">
-      <div class="comparison-title">🎯 이 정도 금액이면</div>
+    <div class="comparisons" id="comparisonSection">
+      <div class="comparison-title">💡 비용 비교</div>
       <div id="comparisonList"></div>
     </div>
 
@@ -354,7 +354,7 @@
     document.getElementById('netCost').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
     document.getElementById('netCostBreakdown').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
 
-    generateComparisons(netCost, duration);
+    generateComparisons(duration, beforeWeekly, afterWeekly, totalDrug);
     generateEvaluation(netCost, totalDrug);
     generateSummary(netCost, duration, beforeWeekly, afterWeekly);
 
@@ -384,20 +384,26 @@
     }
   }
 
-  function generateComparisons(netCost, duration) {
-    const amount = Math.abs(netCost);
-    const comparisons = netCost < 0 ? savingsComparisons : expenseComparisons;
+  function generateComparisons(duration, beforeWeekly, afterWeekly, totalDrug) {
+    const beforeMonthly = Math.round(beforeWeekly * 4.3);
+    const afterMonthly = Math.round(afterWeekly * 4.3);
+    const withoutDrug = beforeMonthly * duration;
+    const withDrug = totalDrug + (afterMonthly * duration);
 
-    const html = comparisons.map(c => {
-      const count = Math.round(amount / c.price);
-      return `<div class="comparison-item" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--board);border-radius:4px;margin-bottom:10px;">
-        <span style="font-size:32px;">${c.icon}</span>
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--amber);">${count}개</div>
-          <div style="font-size:12px;color:var(--muted);">${c.name}</div>
+    const html = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--board);border-radius:6px;padding:16px;text-align:center;border:1px solid var(--split-line);">
+          <div style="font-size:11px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">약물 미사용</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">${duration}개월 식비</div>
+          <div style="font-size:22px;font-weight:700;color:var(--ivory);">${formatNumber(withoutDrug)}원</div>
+        </div>
+        <div style="background:rgba(242,194,48,0.08);border-radius:6px;padding:16px;text-align:center;border:1px solid var(--amber-dim);">
+          <div style="font-size:11px;color:var(--amber);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px;">약물 사용</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px;">약물비 ${formatNumber(totalDrug)}원</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">식비 ${formatNumber(afterMonthly * duration)}원</div>
+          <div style="font-size:22px;font-weight:700;color:var(--amber);">${formatNumber(withDrug)}원</div>
         </div>
       </div>`;
-    }).slice(0, 4).join('');
     document.getElementById('comparisonList').innerHTML = html;
   }
 
