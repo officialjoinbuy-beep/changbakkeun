@@ -313,7 +313,8 @@
     const netCost = totalDrug - totalSaving;
 
     document.getElementById('totalDrug').textContent = formatNumber(totalDrug) + '원';
-    document.getElementById('totalSaving').textContent = formatNumber(totalSaving) + '원';
+    const savingFormula = `(${formatNumber(weeklyReduction)} × 4.3 × ${duration}개월) `;
+    document.getElementById('totalSaving').innerHTML = `<span style="color:var(--muted);font-size:11px;">${savingFormula}</span>${formatNumber(totalSaving)}원`;
     document.getElementById('netCost').textContent = formatNumber(netCost) + '원';
     document.getElementById('netCostBreakdown').textContent = formatNumber(netCost) + '원';
 
@@ -325,9 +326,27 @@
   }
 
   function generateComparisons(amount) {
+    const icons = {
+      '스타벅스 아메리카노': '☕',
+      '점심 정식': '🍱',
+      '편의점 도시락': '🍙',
+      '영화 티켓': '🎬',
+      '택시 기본요금': '🚕',
+      '회전초밥 1인분': '🍣',
+      '카페 라떼': '☕',
+      '편의점 라면': '🍜'
+    };
+
     const html = comparisons.map(c => {
       const count = Math.round(amount / c.price);
-      return `<div class="comparison-item">= ${c.name} ${count}개</div>`;
+      const icon = icons[c.name] || '✓';
+      return `<div class="comparison-item" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--board);border-radius:4px;margin-bottom:10px;">
+        <span style="font-size:32px;">${icon}</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--amber);">${count}개</div>
+          <div style="font-size:12px;color:var(--muted);">${c.name}</div>
+        </div>
+      </div>`;
     }).slice(0, 4).join('');
     document.getElementById('comparisonList').innerHTML = html;
   }
