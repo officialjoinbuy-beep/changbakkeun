@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     let lastRawResponse = null;
     for (const dealYmd of months) {
       const url =
-        `https://apis.data.go.kr/1613000/RTMSDataSvcAptTradeDev/getRTMSDataSvcAptTradeDev` +
+        `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade` +
         `?serviceKey=${MOLIT_KEY}&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}&numOfRows=1000&pageNo=1&_type=json`;
       const r = await fetch(url);
       const rawText = await r.text();
