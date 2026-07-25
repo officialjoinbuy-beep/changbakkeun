@@ -377,8 +377,10 @@
     const monthlyAdditionalCost = Math.round(monthlyDifference / duration);
     const particle = getParticle(drugName);
     const conclusionText = `
-      <div style="margin-bottom:12px;">매달 <strong style="color:#4CAF50;">${formatNumber(monthlyAdditionalCost)}원</strong> 정도를 추가로 지출하면<br>${drugName}${particle} 유지할 수 있습니다.</div>
-      <div style="font-size:12px;color:var(--muted);">(${duration}개월 기준 총 <strong style="color:#4CAF50;">${formatNumber(monthlyDifference)}원</strong>)</div>
+      <div style="margin-bottom:24px;text-align:center;font-size:18px;font-weight:700;line-height:1.6;">
+        약물투여후 ${duration}개월 기준 총 <strong style="color:#4CAF50;">${formatNumber(monthlyDifference)}원</strong> 지출 증가!!
+      </div>
+      <div style="margin-bottom:12px;text-align:center;">매달 <strong style="color:#4CAF50;">${formatNumber(monthlyAdditionalCost)}원</strong> 정도를 추가로 지출하면<br>${drugName}${particle} 유지할 수 있습니다.</div>
     `;
     document.getElementById('conclusion').innerHTML = conclusionText;
   }
