@@ -307,6 +307,21 @@
     return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
 
+  function getDrugName() {
+    const drugName = document.getElementById('drugName').value;
+    if(drugName === 'mounjaro') return '마운자로';
+    if(drugName === 'wegovy') return '위고비';
+    if(drugName === 'other') return document.getElementById('otherDrugName').value || '약물';
+    return '약물';
+  }
+
+  function getParticle(word) {
+    if(!word) return '를';
+    const lastChar = word.charCodeAt(word.length - 1);
+    const hasJongseong = (lastChar - 0xAC00) % 28 > 0;
+    return hasJongseong ? '을' : '를';
+  }
+
   function calculate() {
     const drugCost = parseInt(document.getElementById('drugCost').value) || 0;
     const duration = parseInt(document.getElementById('duration').value);
@@ -332,18 +347,18 @@
     }
 
     const totalDrug = drugCost * (duration / (prescriptionWeeks / 4));
-    displayResult(duration, beforeWeekly, afterWeekly, totalDrug);
+    const drugName = getDrugName();
+    displayResult(duration, beforeWeekly, afterWeekly, totalDrug, drugName);
 
     document.getElementById('resultContainer').classList.add('show');
     document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
   }
 
-  function displayResult(duration, beforeWeekly, afterWeekly, totalDrug) {
+  function displayResult(duration, beforeWeekly, afterWeekly, totalDrug, drugName) {
     const beforeMonthly = Math.round(beforeWeekly * 4.3);
     const afterMonthly = Math.round(afterWeekly * 4.3);
     const withoutDrug = beforeMonthly * duration;
     const withDrug = totalDrug + (afterMonthly * duration);
-    const monthlyCost = Math.round(totalDrug / duration);
     const monthlyDifference = withDrug - withoutDrug;
 
     // 기간 표시
@@ -360,9 +375,9 @@
 
     // 결론
     const monthlyAdditionalCost = Math.round(monthlyDifference / duration);
+    const particle = getParticle(drugName);
     const conclusionText = `
-      <div style="margin-bottom:8px;">월 <strong style="color:var(--amber);">${formatNumber(monthlyCost)}원</strong>의 약물비로</div>
-      <div style="margin-bottom:12px;">매달 <strong style="color:#4CAF50;">${formatNumber(monthlyAdditionalCost)}원</strong> 정도를 추가로 지출하면<br>약물을 유지할 수 있습니다.</div>
+      <div style="margin-bottom:12px;">매달 <strong style="color:#4CAF50;">${formatNumber(monthlyAdditionalCost)}원</strong> 정도를 추가로 지출하면<br>${drugName}${particle} 유지할 수 있습니다.</div>
       <div style="font-size:12px;color:var(--muted);">(${duration}개월 기준 총 <strong style="color:#4CAF50;">${formatNumber(monthlyDifference)}원</strong>)</div>
     `;
     document.getElementById('conclusion').innerHTML = conclusionText;
