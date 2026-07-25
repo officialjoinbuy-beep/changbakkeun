@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>약물효과계산기 · 제로서치</title>
+<meta name="description" content="약물 비용과 식비 절감액을 비교해서 실제 비용을 계산해보세요.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  :root{
+    --navy:#0B1220;
+    --navy-2:#111B2E;
+    --board:#0E1626;
+    --amber:#F2C230;
+    --amber-dim:#8C6E1E;
+    --ivory:#EDEBE3;
+    --muted:#7C8AA0;
+    --teal:#3A7CA5;
+    --split-line: rgba(255,255,255,0.06);
+    --green:#4CAF50;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--navy);color:var(--ivory);
+    font-family:'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
+    -webkit-font-smoothing:antialiased;}
+
+  .wrap{max-width:600px;margin:0 auto;padding:28px 18px 60px;}
+
+  .header{margin-bottom:32px;}
+  .eyebrow{
+    font-family:'Space Mono', monospace;
+    font-size:11px;letter-spacing:.18em;color:var(--amber);
+    text-transform:uppercase;margin-bottom:6px;
+  }
+  h1{font-size:24px;margin:0 0 8px;font-weight:700;}
+  .desc{color:var(--muted);font-size:13px;margin:0;}
+
+  .section{margin-bottom:32px;}
+  .section-title{
+    font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.12em;
+    color:var(--teal);text-transform:uppercase;margin:0 0 16px;padding-bottom:8px;
+    border-bottom:1px solid var(--split-line);
+  }
+
+  .form-group{margin-bottom:20px;}
+  label{
+    display:block;font-size:13px;color:var(--muted);margin-bottom:8px;
+    font-weight:500;
+  }
+
+  input[type="number"], select{
+    width:100%;padding:12px;
+    background:var(--board);border:1px solid var(--split-line);
+    color:var(--ivory);font-family:'Space Mono', monospace;font-size:14px;
+    border-radius:4px;transition:border-color .2s;
+  }
+  input[type="number"]:focus, select:focus{
+    outline:none;border-color:var(--amber);
+  }
+
+  .button-group{display:flex;gap:8px;margin-bottom:20px;}
+  button{
+    flex:1;padding:10px 12px;
+    background:var(--board);border:1px solid var(--split-line);
+    color:var(--ivory);font-family:'Pretendard';font-size:13px;
+    border-radius:4px;cursor:pointer;transition:all .2s;
+  }
+  button.active{
+    background:rgba(242,194,48,0.12);border-color:var(--amber);color:var(--amber);
+  }
+  button:hover:not(.active){border-color:var(--amber);}
+
+  .result{
+    background:rgba(242,194,48,0.06);border:1px solid var(--amber-dim);
+    border-radius:8px;padding:24px;margin-top:32px;
+  }
+
+  .result-label{
+    font-size:12px;color:var(--muted);letter-spacing:.08em;
+    text-transform:uppercase;margin-bottom:8px;
+  }
+
+  .result-value{
+    font-size:32px;font-weight:700;color:var(--amber);
+    font-family:'Space Mono', monospace;margin-bottom:16px;
+  }
+
+  .result-comparison{
+    font-size:13px;line-height:1.6;color:var(--ivory);
+  }
+  .comparison-item{
+    margin-bottom:10px;padding:10px;
+    background:var(--navy-2);border-radius:4px;
+  }
+
+  .note{
+    font-size:12px;color:var(--muted);margin-top:24px;
+    padding-top:16px;border-top:1px solid var(--split-line);
+    line-height:1.6;
+  }
+
+  .emoji{font-size:20px;margin-right:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="eyebrow">약물 비용 계산기</div>
+    <h1>실제 비용이 얼마나 될까?</h1>
+    <p class="desc">약물 비용에서 식비 절감액을 빼면, 생각보다 저렴할 수 있습니다.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">약물 정보</div>
+
+    <div class="form-group">
+      <label>내가 처방받은 약물 비용</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="drugCost" placeholder="예: 300" min="0">
+        <span style="padding:12px;color:var(--muted);">만원</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>사용 기간</label>
+      <div class="button-group">
+        <button class="duration-btn active" data-months="1">1개월</button>
+        <button class="duration-btn" data-months="3">3개월</button>
+        <button class="duration-btn" data-months="6">6개월</button>
+        <button class="duration-btn" data-months="12">12개월</button>
+      </div>
+      <input type="hidden" id="duration" value="1">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">식비 비교</div>
+
+    <div class="form-group">
+      <label>약물 시작 직전 주 식비 (1주일 평균)</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="beforeWeekly" placeholder="예: 35" min="0">
+        <span style="padding:12px;color:var(--muted);">만원</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>약물 사용 중 주 식비 (1주일 평균)</label>
+      <div style="display:flex;gap:8px;">
+        <input type="number" id="afterWeekly" placeholder="예: 10" min="0">
+        <span style="padding:12px;color:var(--muted);">만원</span>
+      </div>
+    </div>
+  </div>
+
+  <button style="width:100%;padding:14px;background:var(--amber);color:var(--navy);font-weight:700;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin-bottom:20px;" onclick="calculate()">
+    💰 비용 계산하기
+  </button>
+
+  <div id="resultContainer" style="display:none;">
+    <div class="result">
+      <div class="result-label">📊 실제 순비용</div>
+      <div class="result-value" id="netCost">-</div>
+
+      <div class="result-comparison">
+        <div class="comparison-item">
+          <strong>총 약물 비용:</strong> <span id="totalDrug">0</span>만원
+        </div>
+        <div class="comparison-item">
+          <strong>절감된 식비:</strong> <span id="totalSaving">0</span>만원
+        </div>
+      </div>
+
+      <div style="margin-top:20px;padding:16px;background:var(--navy-2);border-radius:4px;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">🎯 쉽게 말하면</div>
+        <div id="comparison" style="font-size:14px;line-height:1.7;"></div>
+      </div>
+    </div>
+
+    <div class="note">
+      💡 <strong>참고:</strong> 이 계산은 입력한 수치를 기준으로 한 예측입니다. 개인차와 지역별 가격 차이가 있을 수 있습니다.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const comparisons = [
+    { name: '스타벅스 아메리카노', price: 5 },
+    { name: '점심 도시락', price: 8 },
+    { name: '편의점 편도라면', price: 4 },
+    { name: '영화 티켓', price: 14 },
+    { name: '택시 기본요금', price: 3.5 },
+    { name: '회전초밥 1인분', price: 12 },
+  ];
+
+  document.querySelectorAll('.duration-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('duration').value = btn.dataset.months;
+    });
+  });
+
+  function calculate() {
+    const drugCost = parseFloat(document.getElementById('drugCost').value) || 0;
+    const duration = parseInt(document.getElementById('duration').value);
+    const beforeWeekly = parseFloat(document.getElementById('beforeWeekly').value) || 0;
+    const afterWeekly = parseFloat(document.getElementById('afterWeekly').value) || 0;
+
+    if(!drugCost || !beforeWeekly || !afterWeekly) {
+      alert('모든 값을 입력해주세요.');
+      return;
+    }
+
+    const weeklyReduction = beforeWeekly - afterWeekly;
+    const monthlyReduction = weeklyReduction * 4.3;
+    const totalSaving = monthlyReduction * duration;
+    const totalDrug = drugCost * duration;
+    const netCost = totalDrug - totalSaving;
+
+    document.getElementById('totalDrug').textContent = totalDrug.toLocaleString();
+    document.getElementById('totalSaving').textContent = Math.round(totalSaving).toLocaleString();
+    document.getElementById('netCost').textContent = Math.round(netCost).toLocaleString();
+
+    const comparisonText = getComparison(Math.abs(netCost));
+    document.getElementById('comparison').textContent = comparisonText;
+
+    document.getElementById('resultContainer').style.display = 'block';
+    document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function getComparison(amount) {
+    if(amount === 0) return '약물 비용과 식비 절감액이 정확히 같습니다!';
+
+    let text = '';
+    if(amount < 0) {
+      text = `✅ 실제로는 "${Math.abs(Math.round(amount)).toLocaleString()}만원" 절감됩니다!\n\n`;
+    } else {
+      text = `💰 추가 비용은 "${Math.round(amount).toLocaleString()}만원"입니다.\n\n`;
+    }
+
+    for(let comp of comparisons) {
+      const count = Math.round(amount / comp.price);
+      if(count > 0) {
+        text += `= ${comp.name} ${count}개 가격\n`;
+        break;
+      }
+    }
+
+    return text;
+  }
+</script>
+</body>
+</html>
