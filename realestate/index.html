@@ -366,76 +366,94 @@ async function extractPdfText(file){
 const lookupBtn = document.getElementById('lookup-btn');
 const lookupStatus = document.getElementById('lookup-status');
 const candidateList = document.getElementById('candidate-list');
+const pyeongField = document.getElementById('pyeong');
 let candidate = null;
+let step = 'address'; // 'address' 또는 'price'
 
-async function handlePriceQuery(c) {
-  const pyeong = parseFloat(document.getElementById('pyeong').value);
-  if(isNaN(pyeong) || pyeong <= 0){
-    lookupStatus.className = 'lookup-status error';
-    lookupStatus.textContent = '❌ 전용면적(평형)을 입력해주세요.';
-    return;
+function goToStep(newStep) {
+  step = newStep;
+  if(step === 'address') {
+    lookupBtn.textContent = '주소 검색';
+  } else {
+    lookupBtn.textContent = '시세 조회';
   }
-  lookupBtn.disabled = true;
-  lookupStatus.className = 'lookup-status';
-  lookupStatus.textContent = '⏳ 시세를 조회하는 중입니다…';
-  candidateList.innerHTML = '';
-  await fetchPrice(c);
-  lookupBtn.disabled = false;
 }
 
 lookupBtn.addEventListener('click', async () => {
-  const address = document.getElementById('address').value.trim();
-  if(!address){
-    lookupStatus.className = 'lookup-status error';
-    lookupStatus.textContent = '❌ 매물 주소를 먼저 입력해주세요.';
-    return;
-  }
-
-  lookupBtn.disabled = true;
-  lookupStatus.className = 'lookup-status';
-  lookupStatus.textContent = '⏳ 주소를 검색하는 중입니다…';
-  candidateList.innerHTML = '';
-
-  try{
-    const res = await fetch('/api/geocode?address=' + encodeURIComponent(address));
-    const data = await res.json();
-
-    if(!res.ok || !data.candidates || data.candidates.length === 0){
+  if(step === 'address') {
+    const address = document.getElementById('address').value.trim();
+    if(!address){
       lookupStatus.className = 'lookup-status error';
-      lookupStatus.textContent = '❌ ' + (data.error || '주소를 찾지 못했습니다.') + ' 정확히 다시 입력해주세요.';
+      lookupStatus.textContent = '❌ 매물 주소를 입력해주세요.';
       return;
     }
 
-    if(data.candidates.length === 1){
-      candidate = data.candidates[0];
-      lookupStatus.className = 'lookup-status';
-      lookupStatus.textContent = '✅ 주소 확인 완료. 이제 전용면적을 입력한 후 "시세 조회"를 눌러주세요.';
-      await new Promise(r => setTimeout(r, 500)); // 메시지를 볼 수 있도록 짧은 딜레이
-    } else {
-      lookupStatus.className = 'lookup-status';
-      lookupStatus.textContent = '⚠️ 같은 이름의 주소가 여러 곳 있습니다. 정확한 주소를 선택해주세요.';
-      data.candidates.forEach((c) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'candidate-item';
-        btn.innerHTML = '<b>' + c.sido + ' ' + c.sigungu + '</b> ' + c.label + (c.jibunLabel ? ' (' + c.jibunLabel + ')' : '');
-        btn.addEventListener('click', async () => {
-          candidate = c;
-          candidateList.innerHTML = '';
-          lookupStatus.className = 'lookup-status';
-          lookupStatus.textContent = '✅ 주소 선택 완료. 이제 전용면적을 입력한 후 "시세 조회"를 눌러주세요.';
+    lookupBtn.disabled = true;
+    lookupStatus.className = 'lookup-status';
+    lookupStatus.textContent = '⏳ 주소를 검색하는 중입니다…';
+    candidateList.innerHTML = '';
+
+    try{
+      const res = await fetch('/api/geocode?address=' + encodeURIComponent(address));
+      const data = await res.json();
+
+      if(!res.ok || !data.candidates || data.candidates.length === 0){
+        lookupStatus.className = 'lookup-status error';
+        lookupStatus.textContent = '❌ ' + (data.error || '주소를 찾지 못했습니다.') + ' 다시 입력해주세요.';
+        return;
+      }
+
+      if(data.candidates.length === 1){
+        candidate = data.candidates[0];
+        goToStep('price');
+        lookupStatus.className = 'lookup-status';
+        lookupStatus.textContent = '✅ 주소 확인됨. 이제 전용면적(평형)을 입력하세요.';
+      } else {
+        lookupStatus.className = 'lookup-status';
+        lookupStatus.textContent = '⚠️ 같은 주소가 여러 곳입니다. 정확한 주소를 선택하세요:';
+        data.candidates.forEach((c) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'candidate-item';
+          btn.innerHTML = '<b>' + c.sido + ' ' + c.sigungu + '</b> ' + c.label + (c.jibunLabel ? ' (' + c.jibunLabel + ')' : '');
+          btn.addEventListener('click', () => {
+            candidate = c;
+            candidateList.innerHTML = '';
+            goToStep('price');
+            lookupStatus.className = 'lookup-status';
+            lookupStatus.textContent = '✅ 주소 선택됨. 이제 전용면적(평형)을 입력하세요.';
+          });
+          candidateList.appendChild(btn);
         });
-        candidateList.appendChild(btn);
-      });
+      }
+    }catch(err){
+      console.error(err);
+      lookupStatus.className = 'lookup-status error';
+      lookupStatus.textContent = '❌ 오류 발생. 다시 시도해주세요.';
+    }finally{
+      lookupBtn.disabled = false;
     }
-  }catch(err){
-    console.error(err);
-    lookupStatus.className = 'lookup-status error';
-    lookupStatus.textContent = '❌ 조회 중 오류가 발생했습니다. 다시 시도해주세요.';
-  }finally{
+  } else if(step === 'price') {
+    const pyeong = parseFloat(pyeongField.value);
+    if(isNaN(pyeong) || pyeong <= 0){
+      lookupStatus.className = 'lookup-status error';
+      lookupStatus.textContent = '❌ 전용면적(평형)을 입력해주세요.';
+      return;
+    }
+    if(!candidate){
+      lookupStatus.className = 'lookup-status error';
+      lookupStatus.textContent = '❌ 주소를 먼저 선택해주세요.';
+      return;
+    }
+    lookupBtn.disabled = true;
+    lookupStatus.className = 'lookup-status';
+    lookupStatus.textContent = '⏳ 시세를 조회하는 중입니다…';
+    await fetchPrice(candidate);
     lookupBtn.disabled = false;
   }
 });
+
+goToStep('address');
 
 async function fetchPrice(candidate){
   try{
