@@ -6,7 +6,7 @@
 //   KAKAO_REST_KEY   : 카카오 디벨로퍼스에서 발급한 REST API 키
 //   MOLIT_SERVICE_KEY: 공공데이터포털에서 발급한 "국토교통부_아파트매매 실거래자료" 서비스키 (Decoding 키 사용)
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   const address = (req.query.address || "").trim();
   if (!address) {
     return res.status(400).json({ error: "address 파라미터가 필요합니다." });
@@ -27,7 +27,12 @@ module.exports = async function handler(req, res) {
     const kakaoData = await kakaoRes.json();
     const doc = kakaoData.documents && kakaoData.documents[0];
     if (!doc) {
-      return res.status(404).json({ error: "주소를 찾을 수 없습니다. 도로명 또는 지번 주소를 다시 확인해주세요." });
+      // 디버깅용: 카카오 API가 실제로 어떤 응답을 줬는지 그대로 노출
+      return res.status(404).json({
+        error: "주소를 찾을 수 없습니다. 도로명 또는 지번 주소를 다시 확인해주세요.",
+        debug_kakao_status: kakaoRes.status,
+        debug_kakao_response: kakaoData,
+      });
     }
 
     const bCode = doc.address ? doc.address.b_code : (doc.road_address ? doc.road_address.b_code : null);
@@ -94,4 +99,3 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: "시세 조회 중 오류가 발생했습니다." });
   }
 }
-
