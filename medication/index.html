@@ -175,7 +175,7 @@
   </div>
 
   <div class="section">
-    <div class="section-title">식비 현황 (1주일 평균)</div>
+    <div class="section-title" style="font-size:14px;color:var(--amber);font-weight:700;margin-bottom:20px;">⭐ 1주일 평균 식비를 입력해주세요</div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;font-size:12px;">
       <div style="background:var(--navy-2);padding:12px;border-radius:4px;border-left:3px solid var(--muted);">
@@ -288,16 +288,25 @@
   });
 
   document.querySelectorAll('.table input').forEach(input => {
+    input.addEventListener('input', (e) => {
+      let value = e.target.value.replace(/[^\d]/g, '');
+      if(value) {
+        e.target.value = parseInt(value).toLocaleString();
+      }
+      updateTotals();
+    });
     input.addEventListener('change', updateTotals);
   });
 
   function updateTotals() {
-    const before = (parseInt(document.querySelector('.before-meal').value) || 0) +
-                   (parseInt(document.querySelector('.before-snack').value) || 0) +
-                   (parseInt(document.querySelector('.before-dining').value) || 0);
-    const after = (parseInt(document.querySelector('.after-meal').value) || 0) +
-                  (parseInt(document.querySelector('.after-snack').value) || 0) +
-                  (parseInt(document.querySelector('.after-dining').value) || 0);
+    const parseValue = (val) => parseInt(val.replace(/[^\d]/g, '')) || 0;
+
+    const before = parseValue(document.querySelector('.before-meal').value) +
+                   parseValue(document.querySelector('.before-snack').value) +
+                   parseValue(document.querySelector('.before-dining').value);
+    const after = parseValue(document.querySelector('.after-meal').value) +
+                  parseValue(document.querySelector('.after-snack').value) +
+                  parseValue(document.querySelector('.after-dining').value);
 
     document.getElementById('totalBefore').textContent = before.toLocaleString() + '원';
     document.getElementById('totalAfter').textContent = after.toLocaleString() + '원';
@@ -323,7 +332,9 @@
   }
 
   function calculate() {
-    const drugCost = parseInt(document.getElementById('drugCost').value) || 0;
+    const parseValue = (val) => parseInt(val.replace(/[^\d]/g, '')) || 0;
+
+    const drugCost = parseValue(document.getElementById('drugCost').value);
     const duration = parseInt(document.getElementById('duration').value);
     const prescriptionPeriod = document.getElementById('prescriptionPeriod').value;
 
@@ -331,15 +342,15 @@
     if(prescriptionPeriod === '1week') {
       prescriptionWeeks = 1;
     } else if(prescriptionPeriod === 'custom') {
-      prescriptionWeeks = parseInt(document.getElementById('customWeeks').value) || 4;
+      prescriptionWeeks = parseValue(document.getElementById('customWeeks').value);
     }
 
-    const beforeWeekly = (parseInt(document.querySelector('.before-meal').value) || 0) +
-                         (parseInt(document.querySelector('.before-snack').value) || 0) +
-                         (parseInt(document.querySelector('.before-dining').value) || 0);
-    const afterWeekly = (parseInt(document.querySelector('.after-meal').value) || 0) +
-                        (parseInt(document.querySelector('.after-snack').value) || 0) +
-                        (parseInt(document.querySelector('.after-dining').value) || 0);
+    const beforeWeekly = parseValue(document.querySelector('.before-meal').value) +
+                         parseValue(document.querySelector('.before-snack').value) +
+                         parseValue(document.querySelector('.before-dining').value);
+    const afterWeekly = parseValue(document.querySelector('.after-meal').value) +
+                        parseValue(document.querySelector('.after-snack').value) +
+                        parseValue(document.querySelector('.after-dining').value);
 
     if(!drugCost || !beforeWeekly) {
       alert('모든 값을 입력해주세요.');
