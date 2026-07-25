@@ -355,8 +355,8 @@
     let text = '';
 
     if(netCost < 0) {
-      text = `<span class="eval-positive">✅ 식비 절감으로 충분히 충당됩니다!</span><br>
-              실제로는 비용을 절감할 수 있는 기간입니다.`;
+      text = `<span class="eval-positive">✅ 오히려 돈을 버는 상황입니다!</span><br>
+              식비 절감액이 약물 비용을 초과해서 전체적으로 절감됩니다.`;
     } else if(netCost < totalDrug * 0.3) {
       text = `<span class="eval-neutral">🎯 충분히 할 가치가 있습니다!</span><br>
               식비 절감을 고려하면 부담이 크지 않습니다.`;
