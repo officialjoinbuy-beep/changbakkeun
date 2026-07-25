@@ -19,89 +19,71 @@
     --muted:#7C8AA0;
     --teal:#3A7CA5;
     --split-line: rgba(255,255,255,0.06);
-    --green:#4CAF50;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:var(--navy);color:var(--ivory);
     font-family:'Pretendard', -apple-system, 'Malgun Gothic', sans-serif;
     -webkit-font-smoothing:antialiased;}
 
-  .wrap{max-width:600px;margin:0 auto;padding:28px 18px 60px;}
+  .wrap{max-width:700px;margin:0 auto;padding:28px 18px 60px;}
 
   .header{margin-bottom:32px;}
-  .eyebrow{
-    font-family:'Space Mono', monospace;
-    font-size:11px;letter-spacing:.18em;color:var(--amber);
-    text-transform:uppercase;margin-bottom:6px;
-  }
+  .eyebrow{font-family:'Space Mono';font-size:11px;letter-spacing:.18em;color:var(--amber);
+    text-transform:uppercase;margin-bottom:6px;}
   h1{font-size:24px;margin:0 0 8px;font-weight:700;}
   .desc{color:var(--muted);font-size:13px;margin:0;}
 
   .section{margin-bottom:32px;}
-  .section-title{
-    font-family:'Space Mono',monospace;font-size:12px;letter-spacing:.12em;
+  .section-title{font-family:'Space Mono';font-size:12px;letter-spacing:.12em;
     color:var(--teal);text-transform:uppercase;margin:0 0 16px;padding-bottom:8px;
-    border-bottom:1px solid var(--split-line);
-  }
+    border-bottom:1px solid var(--split-line);}
 
   .form-group{margin-bottom:20px;}
-  label{
-    display:block;font-size:13px;color:var(--muted);margin-bottom:8px;
-    font-weight:500;
-  }
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px;font-weight:500;}
 
   input[type="number"], select{
-    width:100%;padding:12px;
-    background:var(--board);border:1px solid var(--split-line);
-    color:var(--ivory);font-family:'Space Mono', monospace;font-size:14px;
-    border-radius:4px;transition:border-color .2s;
-  }
-  input[type="number"]:focus, select:focus{
-    outline:none;border-color:var(--amber);
-  }
+    width:100%;padding:10px;background:var(--board);border:1px solid var(--split-line);
+    color:var(--ivory);font-family:'Space Mono', monospace;font-size:13px;
+    border-radius:4px;transition:border-color .2s;}
+  input[type="number"]:focus, select:focus{outline:none;border-color:var(--amber);}
 
-  .button-group{display:flex;gap:8px;margin-bottom:20px;}
-  button{
-    flex:1;padding:10px 12px;
-    background:var(--board);border:1px solid var(--split-line);
-    color:var(--ivory);font-family:'Pretendard';font-size:13px;
-    border-radius:4px;cursor:pointer;transition:all .2s;
-  }
-  button.active{
-    background:rgba(242,194,48,0.12);border-color:var(--amber);color:var(--amber);
-  }
-  button:hover:not(.active){border-color:var(--amber);}
+  .input-row{display:flex;gap:8px;align-items:flex-end;}
+  .input-row input{flex:1;}
+  .input-suffix{color:var(--muted);font-size:12px;white-space:nowrap;padding:10px 0;}
 
-  .result{
-    background:rgba(242,194,48,0.06);border:1px solid var(--amber-dim);
-    border-radius:8px;padding:24px;margin-top:32px;
-  }
+  .table{width:100%;border-collapse:collapse;margin:16px 0;background:var(--board);border:1px solid var(--split-line);border-radius:4px;overflow:hidden;}
+  .table th{background:var(--navy-2);padding:12px;text-align:left;font-size:12px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--split-line);}
+  .table td{padding:12px;border-bottom:1px solid var(--split-line);font-size:13px;}
+  .table tr:last-child td{border-bottom:none;}
+  .table .label{color:var(--muted);width:120px;}
+  .table input{width:100%;padding:6px;background:transparent;border:1px solid var(--split-line);color:var(--ivory);font-family:'Space Mono';font-size:12px;border-radius:2px;}
+  .table input:focus{outline:none;border-color:var(--amber);}
+  .table .total{background:rgba(242,194,48,0.06);font-weight:700;color:var(--amber);}
 
-  .result-label{
-    font-size:12px;color:var(--muted);letter-spacing:.08em;
-    text-transform:uppercase;margin-bottom:8px;
-  }
+  .button{width:100%;padding:12px;background:var(--amber);color:var(--navy);font-weight:700;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin-top:20px;}
+  .button:hover{opacity:0.9;}
 
-  .result-value{
-    font-size:32px;font-weight:700;color:var(--amber);
-    font-family:'Space Mono', monospace;margin-bottom:16px;
-  }
+  .result{background:rgba(242,194,48,0.06);border:1px solid var(--amber-dim);border-radius:8px;padding:24px;margin-top:32px;display:none;}
+  .result.show{display:block;}
 
-  .result-comparison{
-    font-size:13px;line-height:1.6;color:var(--ivory);
-  }
-  .comparison-item{
-    margin-bottom:10px;padding:10px;
-    background:var(--navy-2);border-radius:4px;
-  }
+  .result-item{margin-bottom:20px;}
+  .result-label{font-size:12px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;}
+  .result-value{font-size:28px;font-weight:700;color:var(--amber);font-family:'Space Mono', monospace;}
 
-  .note{
-    font-size:12px;color:var(--muted);margin-top:24px;
-    padding-top:16px;border-top:1px solid var(--split-line);
-    line-height:1.6;
-  }
+  .result-breakdown{background:var(--navy-2);border-radius:4px;padding:16px;margin-top:20px;font-size:13px;line-height:1.8;}
+  .breakdown-row{display:flex;justify-content:space-between;margin-bottom:8px;}
+  .breakdown-row.total{border-top:1px solid var(--split-line);padding-top:8px;margin-top:8px;font-weight:700;color:var(--amber);}
 
-  .emoji{font-size:20px;margin-right:8px;}
+  .comparisons{background:var(--navy-2);border-radius:4px;padding:16px;margin-top:20px;font-size:13px;}
+  .comparison-title{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+  .comparison-item{margin-bottom:8px;padding:8px;background:var(--board);border-radius:2px;}
+
+  .evaluation{background:var(--navy-2);border-radius:4px;padding:16px;margin-top:20px;font-size:14px;line-height:1.6;}
+  .eval-positive{color:#4CAF50;}
+  .eval-neutral{color:var(--amber);}
+  .eval-negative{color:#ff6b6b;}
+
+  .note{font-size:12px;color:var(--muted);margin-top:24px;padding-top:16px;border-top:1px solid var(--split-line);line-height:1.6;}
 </style>
 </head>
 <body>
@@ -117,68 +99,105 @@
     <div class="section-title">약물 정보</div>
 
     <div class="form-group">
-      <label>내가 처방받은 약물 비용</label>
-      <div style="display:flex;gap:8px;">
-        <input type="number" id="drugCost" placeholder="예: 300" min="0">
-        <span style="padding:12px;color:var(--muted);">만원</span>
+      <label>약물명</label>
+      <select id="drugName">
+        <option value="">선택해주세요</option>
+        <option value="mounjaro">마운자로</option>
+        <option value="wegovy">위고비</option>
+        <option value="other">기타</option>
+      </select>
+    </div>
+
+    <div class="form-group" id="otherDrugGroup" style="display:none;">
+      <label>약물명 (직접 입력)</label>
+      <input type="text" id="otherDrugName" placeholder="예: 삭센다">
+    </div>
+
+    <div class="form-group">
+      <label>한 번에 처방받은 약물 비용</label>
+      <div class="input-row">
+        <input type="number" id="drugCost" placeholder="예: 750000" min="0">
+        <span class="input-suffix">원</span>
       </div>
     </div>
 
     <div class="form-group">
       <label>사용 기간</label>
-      <div class="button-group">
-        <button class="duration-btn active" data-months="1">1개월</button>
-        <button class="duration-btn" data-months="3">3개월</button>
-        <button class="duration-btn" data-months="6">6개월</button>
-        <button class="duration-btn" data-months="12">12개월</button>
+      <div style="display:flex;gap:8px;">
+        <button class="duration-btn" style="flex:1;padding:10px;background:var(--board);border:1px solid var(--split-line);color:var(--ivory);border-radius:4px;cursor:pointer;transition:all .2s;" data-months="1">1개월</button>
+        <button class="duration-btn" style="flex:1;padding:10px;background:var(--board);border:1px solid var(--split-line);color:var(--ivory);border-radius:4px;cursor:pointer;transition:all .2s;background:rgba(242,194,48,0.12);border-color:var(--amber);color:var(--amber);" data-months="3">3개월</button>
+        <button class="duration-btn" style="flex:1;padding:10px;background:var(--board);border:1px solid var(--split-line);color:var(--ivory);border-radius:4px;cursor:pointer;transition:all .2s;" data-months="6">6개월</button>
+        <button class="duration-btn" style="flex:1;padding:10px;background:var(--board);border:1px solid var(--split-line);color:var(--ivory);border-radius:4px;cursor:pointer;transition:all .2s;" data-months="12">12개월</button>
       </div>
-      <input type="hidden" id="duration" value="1">
+      <input type="hidden" id="duration" value="3">
     </div>
   </div>
 
   <div class="section">
-    <div class="section-title">식비 비교</div>
+    <div class="section-title">식비 비교 (1주일 평균)</div>
 
-    <div class="form-group">
-      <label>약물 시작 직전 주 식비 (1주일 평균)</label>
-      <div style="display:flex;gap:8px;">
-        <input type="number" id="beforeWeekly" placeholder="예: 35" min="0">
-        <span style="padding:12px;color:var(--muted);">만원</span>
-      </div>
-    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>약물 투여 전</th>
+          <th>약물 투여 후</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="label">기본 식사</td>
+          <td><input type="number" class="before-meal" placeholder="150000" min="0"></td>
+          <td><input type="number" class="after-meal" placeholder="50000" min="0"></td>
+        </tr>
+        <tr>
+          <td class="label">간식/음료</td>
+          <td><input type="number" class="before-snack" placeholder="75000" min="0"></td>
+          <td><input type="number" class="after-snack" placeholder="20000" min="0"></td>
+        </tr>
+        <tr>
+          <td class="label">외식/배달</td>
+          <td><input type="number" class="before-dining" placeholder="100000" min="0"></td>
+          <td><input type="number" class="after-dining" placeholder="30000" min="0"></td>
+        </tr>
+        <tr class="total">
+          <td class="label">주간 합계</td>
+          <td id="totalBefore">0원</td>
+          <td id="totalAfter">0원</td>
+        </tr>
+      </tbody>
+    </table>
 
-    <div class="form-group">
-      <label>약물 사용 중 주 식비 (1주일 평균)</label>
-      <div style="display:flex;gap:8px;">
-        <input type="number" id="afterWeekly" placeholder="예: 10" min="0">
-        <span style="padding:12px;color:var(--muted);">만원</span>
-      </div>
-    </div>
+    <button class="button" onclick="calculate()">💰 비용 계산하기</button>
   </div>
 
-  <button style="width:100%;padding:14px;background:var(--amber);color:var(--navy);font-weight:700;border:none;border-radius:4px;cursor:pointer;font-size:14px;margin-bottom:20px;" onclick="calculate()">
-    💰 비용 계산하기
-  </button>
-
-  <div id="resultContainer" style="display:none;">
-    <div class="result">
+  <div class="result" id="resultContainer">
+    <div class="result-item">
       <div class="result-label">📊 실제 순비용</div>
       <div class="result-value" id="netCost">-</div>
+    </div>
 
-      <div class="result-comparison">
-        <div class="comparison-item">
-          <strong>총 약물 비용:</strong> <span id="totalDrug">0</span>만원
-        </div>
-        <div class="comparison-item">
-          <strong>절감된 식비:</strong> <span id="totalSaving">0</span>만원
-        </div>
+    <div class="result-breakdown">
+      <div class="breakdown-row">
+        <span>총 약물 비용</span>
+        <span id="totalDrug">0원</span>
       </div>
-
-      <div style="margin-top:20px;padding:16px;background:var(--navy-2);border-radius:4px;">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">🎯 쉽게 말하면</div>
-        <div id="comparison" style="font-size:14px;line-height:1.7;"></div>
+      <div class="breakdown-row">
+        <span>절감된 식비</span>
+        <span id="totalSaving">0원</span>
+      </div>
+      <div class="breakdown-row total">
+        <span>실제 순비용</span>
+        <span id="netCostBreakdown">0원</span>
       </div>
     </div>
+
+    <div class="comparisons">
+      <div class="comparison-title">🎯 이 정도 금액이면</div>
+      <div id="comparisonList"></div>
+    </div>
+
+    <div class="evaluation" id="evaluation"></div>
 
     <div class="note">
       💡 <strong>참고:</strong> 이 계산은 입력한 수치를 기준으로 한 예측입니다. 개인차와 지역별 가격 차이가 있을 수 있습니다.
@@ -189,69 +208,110 @@
 
 <script>
   const comparisons = [
-    { name: '스타벅스 아메리카노', price: 5 },
-    { name: '점심 도시락', price: 8 },
-    { name: '편의점 편도라면', price: 4 },
-    { name: '영화 티켓', price: 14 },
-    { name: '택시 기본요금', price: 3.5 },
-    { name: '회전초밥 1인분', price: 12 },
+    { name: '스타벅스 아메리카노', price: 5500 },
+    { name: '점심 정식', price: 12000 },
+    { name: '편의점 도시락', price: 8000 },
+    { name: '영화 티켓', price: 14000 },
+    { name: '택시 기본요금', price: 3800 },
+    { name: '회전초밥 1인분', price: 12000 },
+    { name: '카페 라떼', price: 5500 },
+    { name: '편의점 라면', price: 4000 },
   ];
+
+  document.getElementById('drugName').addEventListener('change', (e) => {
+    document.getElementById('otherDrugGroup').style.display = e.target.value === 'other' ? 'block' : 'none';
+  });
 
   document.querySelectorAll('.duration-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      document.querySelectorAll('.duration-btn').forEach(b => {
+        b.style.background = 'var(--board)';
+        b.style.borderColor = 'var(--split-line)';
+        b.style.color = 'var(--ivory)';
+      });
+      btn.style.background = 'rgba(242,194,48,0.12)';
+      btn.style.borderColor = 'var(--amber)';
+      btn.style.color = 'var(--amber)';
       document.getElementById('duration').value = btn.dataset.months;
     });
   });
 
-  function calculate() {
-    const drugCost = parseFloat(document.getElementById('drugCost').value) || 0;
-    const duration = parseInt(document.getElementById('duration').value);
-    const beforeWeekly = parseFloat(document.getElementById('beforeWeekly').value) || 0;
-    const afterWeekly = parseFloat(document.getElementById('afterWeekly').value) || 0;
+  document.querySelectorAll('.table input').forEach(input => {
+    input.addEventListener('change', updateTotals);
+  });
 
-    if(!drugCost || !beforeWeekly || !afterWeekly) {
+  function updateTotals() {
+    const before = (parseInt(document.querySelector('.before-meal').value) || 0) +
+                   (parseInt(document.querySelector('.before-snack').value) || 0) +
+                   (parseInt(document.querySelector('.before-dining').value) || 0);
+    const after = (parseInt(document.querySelector('.after-meal').value) || 0) +
+                  (parseInt(document.querySelector('.after-snack').value) || 0) +
+                  (parseInt(document.querySelector('.after-dining').value) || 0);
+
+    document.getElementById('totalBefore').textContent = before.toLocaleString() + '원';
+    document.getElementById('totalAfter').textContent = after.toLocaleString() + '원';
+  }
+
+  function calculate() {
+    const drugCost = parseInt(document.getElementById('drugCost').value) || 0;
+    const duration = parseInt(document.getElementById('duration').value);
+
+    const beforeWeekly = (parseInt(document.querySelector('.before-meal').value) || 0) +
+                         (parseInt(document.querySelector('.before-snack').value) || 0) +
+                         (parseInt(document.querySelector('.before-dining').value) || 0);
+    const afterWeekly = (parseInt(document.querySelector('.after-meal').value) || 0) +
+                        (parseInt(document.querySelector('.after-snack').value) || 0) +
+                        (parseInt(document.querySelector('.after-dining').value) || 0);
+
+    if(!drugCost || !beforeWeekly) {
       alert('모든 값을 입력해주세요.');
       return;
     }
 
     const weeklyReduction = beforeWeekly - afterWeekly;
     const monthlyReduction = weeklyReduction * 4.3;
-    const totalSaving = monthlyReduction * duration;
+    const totalSaving = Math.round(monthlyReduction * duration);
     const totalDrug = drugCost * duration;
     const netCost = totalDrug - totalSaving;
 
-    document.getElementById('totalDrug').textContent = totalDrug.toLocaleString();
-    document.getElementById('totalSaving').textContent = Math.round(totalSaving).toLocaleString();
-    document.getElementById('netCost').textContent = Math.round(netCost).toLocaleString();
+    document.getElementById('totalDrug').textContent = totalDrug.toLocaleString() + '원';
+    document.getElementById('totalSaving').textContent = totalSaving.toLocaleString() + '원';
+    document.getElementById('netCost').textContent = netCost.toLocaleString() + '원';
+    document.getElementById('netCostBreakdown').textContent = netCost.toLocaleString() + '원';
 
-    const comparisonText = getComparison(Math.abs(netCost));
-    document.getElementById('comparison').textContent = comparisonText;
+    generateComparisons(Math.abs(netCost));
+    generateEvaluation(netCost, totalDrug);
 
-    document.getElementById('resultContainer').style.display = 'block';
+    document.getElementById('resultContainer').classList.add('show');
     document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
   }
 
-  function getComparison(amount) {
-    if(amount === 0) return '약물 비용과 식비 절감액이 정확히 같습니다!';
+  function generateComparisons(amount) {
+    const html = comparisons.map(c => {
+      const count = Math.round(amount / c.price);
+      return `<div class="comparison-item">= ${c.name} ${count}개</div>`;
+    }).slice(0, 4).join('');
+    document.getElementById('comparisonList').innerHTML = html;
+  }
 
+  function generateEvaluation(netCost, totalDrug) {
     let text = '';
-    if(amount < 0) {
-      text = `✅ 실제로는 "${Math.abs(Math.round(amount)).toLocaleString()}만원" 절감됩니다!\n\n`;
+
+    if(netCost < 0) {
+      text = `<span class="eval-positive">✅ 식비 절감으로 충분히 충당됩니다!</span><br>
+              실제로는 비용을 절감할 수 있는 기간입니다.`;
+    } else if(netCost < totalDrug * 0.3) {
+      text = `<span class="eval-neutral">🎯 충분히 할 가치가 있습니다!</span><br>
+              식비 절감을 고려하면 부담이 크지 않습니다.`;
+    } else if(netCost < totalDrug * 0.6) {
+      text = `<span class="eval-neutral">💭 조금 생각해볼 만합니다.</span><br>
+              어느 정도 추가 비용이 있지만 감당할 수 있는 수준입니다.`;
     } else {
-      text = `💰 추가 비용은 "${Math.round(amount).toLocaleString()}만원"입니다.\n\n`;
+      text = `<span class="eval-negative">⚠️ 좀 부담스러울 수 있습니다.</span><br>
+              식비 절감보다 약물 비용이 훨씬 큽니다.`;
     }
 
-    for(let comp of comparisons) {
-      const count = Math.round(amount / comp.price);
-      if(count > 0) {
-        text += `= ${comp.name} ${count}개 가격\n`;
-        break;
-      }
-    }
-
-    return text;
+    document.getElementById('evaluation').innerHTML = text;
   }
 </script>
 </body>
