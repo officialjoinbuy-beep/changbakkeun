@@ -222,6 +222,11 @@
 
     <div class="evaluation" id="evaluation"></div>
 
+    <div style="background:rgba(76,175,80,0.08);border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:20px;margin-top:20px;text-align:center;">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">사용 기간 동안</div>
+      <div style="font-size:24px;font-weight:700;color:#4CAF50;" id="summaryText">-</div>
+    </div>
+
     <div class="note">
       💡 <strong>참고:</strong> 이 계산은 입력한 수치를 기준으로 한 예측입니다. 개인차와 지역별 가격 차이가 있을 수 있습니다.
     </div>
@@ -340,9 +345,21 @@
 
     generateComparisons(Math.abs(netCost));
     generateEvaluation(netCost, totalDrug);
+    generateSummary(netCost, duration);
 
     document.getElementById('resultContainer').classList.add('show');
     document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function generateSummary(netCost, duration) {
+    const absAmount = Math.abs(netCost);
+    const summaryEl = document.getElementById('summaryText');
+
+    if(netCost < 0) {
+      summaryEl.innerHTML = `<span style="color:#4CAF50;">${formatNumber(absAmount)}원을 버는 거예요!</span>`;
+    } else {
+      summaryEl.innerHTML = `<span style="color:#ff6b6b;">${formatNumber(netCost)}원을 추가로 지출해야 해요!</span>`;
+    }
   }
 
   function generateComparisons(amount) {
