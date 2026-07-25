@@ -199,18 +199,18 @@
       <tbody>
         <tr>
           <td class="label">기본 식사</td>
-          <td><input type="number" class="before-meal" placeholder="150000" min="0"></td>
-          <td><input type="number" class="after-meal" placeholder="50000" min="0"></td>
+          <td><input type="number" class="before-meal" placeholder="50,000" min="0"></td>
+          <td><input type="number" class="after-meal" placeholder="50,000" min="0"></td>
         </tr>
         <tr>
           <td class="label">간식/음료</td>
-          <td><input type="number" class="before-snack" placeholder="75000" min="0"></td>
-          <td><input type="number" class="after-snack" placeholder="20000" min="0"></td>
+          <td><input type="number" class="before-snack" placeholder="30,000" min="0"></td>
+          <td><input type="number" class="after-snack" placeholder="0" min="0"></td>
         </tr>
         <tr>
           <td class="label">외식/배달</td>
-          <td><input type="number" class="before-dining" placeholder="100000" min="0"></td>
-          <td><input type="number" class="after-dining" placeholder="30000" min="0"></td>
+          <td><input type="number" class="before-dining" placeholder="25,000" min="0"></td>
+          <td><input type="number" class="after-dining" placeholder="0" min="0"></td>
         </tr>
         <tr class="total">
           <td class="label">주간 합계</td>
@@ -359,9 +359,11 @@
     document.getElementById('costWithDrug').textContent = formatNumber(withDrug) + '원';
 
     // 결론
+    const monthlyAdditionalCost = Math.round(monthlyDifference / duration);
     const conclusionText = `
       <div style="margin-bottom:8px;">월 <strong style="color:var(--amber);">${formatNumber(monthlyCost)}원</strong>의 약물비로</div>
-      <div>매달 <strong style="color:#4CAF50;">${formatNumber(monthlyDifference)}원</strong>을 추가로 지출하면<br>약물을 유지할 수 있습니다.</div>
+      <div style="margin-bottom:12px;">매달 <strong style="color:#4CAF50;">${formatNumber(monthlyAdditionalCost)}원</strong> 정도를 추가로 지출하면<br>약물을 유지할 수 있습니다.</div>
+      <div style="font-size:12px;color:var(--muted);">(${duration}개월 기준 총 <strong style="color:#4CAF50;">${formatNumber(monthlyDifference)}원</strong>)</div>
     `;
     document.getElementById('conclusion').innerHTML = conclusionText;
   }
