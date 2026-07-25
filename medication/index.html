@@ -136,11 +136,12 @@
     </div>
 
     <div class="form-group">
-      <label>한 번에 처방받은 약물 비용</label>
+      <label id="drugCostLabel">한 번에 처방받은 약물 비용</label>
       <div class="input-row">
         <input type="number" id="drugCost" placeholder="예: 300000" min="0">
         <span class="input-suffix">원</span>
       </div>
+      <div class="sublabel" id="drugCostHint"></div>
     </div>
 
     <div class="form-group">
@@ -246,6 +247,20 @@
 
   document.getElementById('prescriptionPeriod').addEventListener('change', (e) => {
     document.getElementById('customPeriodGroup').style.display = e.target.value === 'custom' ? 'block' : 'none';
+
+    const label = document.getElementById('drugCostLabel');
+    const hint = document.getElementById('drugCostHint');
+
+    if(e.target.value === '1week') {
+      label.textContent = '1회 처방 약물 비용';
+      hint.textContent = '매주 받는 1회분의 약물 비용을 입력해주세요';
+    } else if(e.target.value === '4weeks') {
+      label.textContent = '1개월분 약물 비용';
+      hint.textContent = '한 달분을 한 번에 받을 때의 총 비용을 입력해주세요';
+    } else {
+      label.textContent = '처방 주기별 약물 비용';
+      hint.textContent = '한 번에 받는 약물의 비용을 입력해주세요';
+    }
   });
 
   document.querySelectorAll('.duration-btn').forEach(btn => {
@@ -312,11 +327,16 @@
     const totalDrug = drugCost * (duration / (prescriptionWeeks / 4));
     const netCost = totalDrug - totalSaving;
 
-    document.getElementById('totalDrug').textContent = formatNumber(totalDrug) + '원';
+    const prescriptionCount = Math.round(duration / (prescriptionWeeks / 4));
+    const drugFormula = `(${formatNumber(drugCost)} × ${prescriptionCount}회) `;
+    document.getElementById('totalDrug').innerHTML = `<span style="color:var(--muted);font-size:11px;">${drugFormula}</span>${formatNumber(totalDrug)}원`;
+
     const savingFormula = `(${formatNumber(weeklyReduction)} × 4.3 × ${duration}개월) `;
     document.getElementById('totalSaving').innerHTML = `<span style="color:var(--muted);font-size:11px;">${savingFormula}</span>${formatNumber(totalSaving)}원`;
-    document.getElementById('netCost').textContent = formatNumber(netCost) + '원';
-    document.getElementById('netCostBreakdown').textContent = formatNumber(netCost) + '원';
+
+    const netFormula = `(${formatNumber(totalDrug)} - ${formatNumber(totalSaving)}) `;
+    document.getElementById('netCost').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
+    document.getElementById('netCostBreakdown').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
 
     generateComparisons(Math.abs(netCost));
     generateEvaluation(netCost, totalDrug);
