@@ -115,6 +115,14 @@
   }
   .lookup-status.found{color:var(--gold);}
   .lookup-status.error{color:var(--red);}
+  .candidate-list{margin-top:12px; display:flex; flex-direction:column; gap:6px;}
+  .candidate-item{
+    text-align:left; padding:12px 14px; background:rgba(236,229,211,0.05);
+    border:1px solid rgba(236,229,211,0.16); border-radius:2px; color:var(--paper);
+    font-family:var(--sans); font-size:13.5px; cursor:pointer; transition:border-color .2s, background .2s;
+  }
+  .candidate-item:hover{border-color:var(--gold); background:rgba(184,134,59,0.08);}
+  .candidate-item b{font-family:var(--mono); color:var(--gold); font-weight:500;}
 
   .analyze-btn{
     margin-top:34px; width:100%; padding:16px; background:var(--gold); color:var(--navy-deep);
@@ -239,6 +247,12 @@
         <button class="lookup-btn" id="lookup-btn" type="button">시세 조회</button>
       </div>
       <div id="lookup-status" class="lookup-status"></div>
+      <div id="candidate-list" class="candidate-list"></div>
+    </div>
+
+    <div class="field" style="margin-top:18px; max-width:220px;">
+      <label>전용면적 (등기부 표제부 참고, 평형)</label>
+      <div class="unit-input"><input type="text" inputmode="numeric" id="pyeong" placeholder="예: 24"><span class="unit">평</span></div>
     </div>
 
     <div class="field-row" style="margin-top:18px;">
@@ -351,6 +365,7 @@ async function extractPdfText(file){
 
 const lookupBtn = document.getElementById('lookup-btn');
 const lookupStatus = document.getElementById('lookup-status');
+const candidateList = document.getElementById('candidate-list');
 
 lookupBtn.addEventListener('click', async () => {
   const address = document.getElementById('address').value.trim();
@@ -358,10 +373,54 @@ lookupBtn.addEventListener('click', async () => {
 
   lookupBtn.disabled = true;
   lookupStatus.className = 'lookup-status';
-  lookupStatus.textContent = '실거래가·시세 정보를 검색하는 중입니다…';
+  lookupStatus.textContent = '주소를 검색하는 중입니다…';
+  candidateList.innerHTML = '';
 
   try{
-    const res = await fetch('/api/price?address=' + encodeURIComponent(address));
+    const res = await fetch('/api/geocode?address=' + encodeURIComponent(address));
+    const data = await res.json();
+
+    if(!res.ok || !data.candidates || data.candidates.length === 0){
+      lookupStatus.className = 'lookup-status error';
+      lookupStatus.textContent = (data.error || '주소를 찾지 못했습니다.') + ' 직접 입력해주세요.';
+      return;
+    }
+
+    if(data.candidates.length === 1){
+      lookupStatus.textContent = '시세를 조회하는 중입니다…';
+      await fetchPrice(data.candidates[0]);
+    } else {
+      lookupStatus.className = 'lookup-status';
+      lookupStatus.textContent = '동일한 도로명이 여러 곳에 있습니다. 정확한 주소를 선택해주세요.';
+      data.candidates.forEach((c) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'candidate-item';
+        btn.innerHTML = '<b>' + c.sido + ' ' + c.sigungu + '</b> ' + c.label + (c.jibunLabel ? ' (' + c.jibunLabel + ')' : '');
+        btn.addEventListener('click', async () => {
+          candidateList.innerHTML = '';
+          lookupStatus.textContent = '시세를 조회하는 중입니다…';
+          lookupBtn.disabled = true;
+          await fetchPrice(c);
+        });
+        candidateList.appendChild(btn);
+      });
+    }
+  }catch(err){
+    console.error(err);
+    lookupStatus.className = 'lookup-status error';
+    lookupStatus.textContent = '조회 중 오류가 발생했습니다. 시세를 직접 입력해주세요.';
+  }finally{
+    lookupBtn.disabled = false;
+  }
+});
+
+async function fetchPrice(candidate){
+  try{
+    const pyeong = parseFloat(document.getElementById('pyeong').value);
+    const areaSqm = (!isNaN(pyeong) && pyeong > 0) ? Math.round(pyeong * 3.3058 * 10) / 10 : '';
+    const params = new URLSearchParams({ bCode: candidate.bCode, jibun: candidate.jibun || '', dong: candidate.dong || '', areaSqm: areaSqm });
+    const res = await fetch('/api/price?' + params.toString());
     const data = await res.json();
 
     if(!res.ok || !data.marketValueManwon){
@@ -372,16 +431,23 @@ lookupBtn.addEventListener('click', async () => {
 
     document.getElementById('marketValue').value = data.marketValueManwon;
     lookupStatus.className = 'lookup-status found';
-    const scopeLabel = data.scope === 'exact' ? '동일 지번 실거래 기준' : '해당 법정동 전체 평균';
-    lookupStatus.textContent = '✓ 약 ' + data.marketValueManwon.toLocaleString() + '만원 (' + scopeLabel + ', 표본 ' + data.sampleCount + '건, 최근 3개월) · ' + data.source + ' — 실제 계약 전 반드시 직접 확인하세요.';
+    const scopeLabels = {
+      exact_area: '동일 지번 · 비슷한 평형 기준',
+      exact: '동일 지번 실거래 기준 (평형 미반영)',
+      dong_area: '해당 동 · 비슷한 평형 기준',
+      dong: '해당 동 전체 평균 (평형 미반영)',
+      district_area: '해당 시군구 · 비슷한 평형 기준',
+      district: '해당 시군구 전체 평균 (평형 미반영)',
+    };
+    const scopeLabel = scopeLabels[data.scope] || data.scope;
+    const areaNote = data.avgAreaSqm ? ' · 평균 전용면적 약 ' + data.avgAreaSqm + '㎡(' + Math.round(data.avgAreaSqm/3.3058) + '평)' : '';
+    lookupStatus.textContent = '✓ ' + candidate.label + ' — 약 ' + data.marketValueManwon.toLocaleString() + '만원 (' + scopeLabel + ', 표본 ' + data.sampleCount + '건' + areaNote + ', 최근 3개월) · ' + data.source + ' — 실제 계약 전 반드시 직접 확인하세요.';
   }catch(err){
     console.error(err);
     lookupStatus.className = 'lookup-status error';
     lookupStatus.textContent = '조회 중 오류가 발생했습니다. 시세를 직접 입력해주세요.';
-  }finally{
-    lookupBtn.disabled = false;
   }
-});
+}
 
 analyzeBtn.addEventListener('click', () => {
   if(!extractedText){ alert('먼저 PDF를 업로드하거나 샘플 데이터를 사용해주세요.'); return; }

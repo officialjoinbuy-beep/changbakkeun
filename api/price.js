@@ -1,49 +1,32 @@
 // /api/price.js
-// Vercel Serverless Function
-// 흐름: 주소 → (카카오) 법정동코드 → (국토부) 최근 3개월 아파트 실거래가 → 평균가 반환
+// 프론트엔드에서 /api/geocode로 먼저 후보를 받아 사용자가 하나를 선택한 뒤,
+// 그 결과(bCode, jibun)와 전용면적(선택)을 넘겨받아 국토부 실거래가를 조회한다.
 //
-// 환경변수 (Vercel 프로젝트 설정 > Environment Variables):
-//   KAKAO_REST_KEY   : 카카오 디벨로퍼스에서 발급한 REST API 키
-//   MOLIT_SERVICE_KEY: 공공데이터포털에서 발급한 "국토교통부_아파트매매 실거래자료" 서비스키 (Decoding 키 사용)
+// 파라미터: bCode (10자리 법정동코드), jibun (지번, 선택), dong (동 이름, 선택),
+//          areaSqm (전용면적 ㎡, 선택 — 있으면 비슷한 면적대끼리만 평균)
+//
+// 환경변수:
+//   MOLIT_SERVICE_KEY: 공공데이터포털 "국토교통부_아파트 매매 실거래가 자료" 일반 인증키
 
-export default async function handler(req, res) {
-  const address = (req.query.address || "").trim();
-  if (!address) {
-    return res.status(400).json({ error: "address 파라미터가 필요합니다." });
+module.exports = async function handler(req, res) {
+  const bCode = (req.query.bCode || "").trim();
+  const jibun = (req.query.jibun || "").trim();
+  const dong = (req.query.dong || "").trim();
+  const areaSqm = parseFloat(req.query.areaSqm || "");
+  const hasArea = !isNaN(areaSqm) && areaSqm > 0;
+
+  if (!bCode) {
+    return res.status(400).json({ error: "bCode 파라미터가 필요합니다." });
   }
 
-  const KAKAO_KEY = process.env.KAKAO_REST_KEY;
   const MOLIT_KEY = process.env.MOLIT_SERVICE_KEY;
-  if (!KAKAO_KEY || !MOLIT_KEY) {
-    return res.status(500).json({ error: "서버에 API 키가 설정되지 않았습니다. Vercel 환경변수를 확인하세요." });
+  if (!MOLIT_KEY) {
+    return res.status(500).json({ error: "서버에 국토부 API 키가 설정되지 않았습니다." });
   }
+
+  const lawdCd = bCode.slice(0, 5);
 
   try {
-    // ---------- 1. 주소 -> 법정동코드 (카카오 로컬 API) ----------
-    const kakaoRes = await fetch(
-      `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`,
-      { headers: { Authorization: `KakaoAK ${KAKAO_KEY}` } }
-    );
-    const kakaoData = await kakaoRes.json();
-    const doc = kakaoData.documents && kakaoData.documents[0];
-    if (!doc) {
-      // 디버깅용: 카카오 API가 실제로 어떤 응답을 줬는지 그대로 노출
-      return res.status(404).json({
-        error: "주소를 찾을 수 없습니다. 도로명 또는 지번 주소를 다시 확인해주세요.",
-        debug_kakao_status: kakaoRes.status,
-        debug_kakao_response: kakaoData,
-      });
-    }
-
-    const bCode = doc.address ? doc.address.b_code : (doc.road_address ? doc.road_address.b_code : null);
-    if (!bCode) {
-      return res.status(404).json({ error: "법정동코드를 확인할 수 없는 주소입니다." });
-    }
-    const lawdCd = bCode.slice(0, 5); // 시군구 코드 5자리
-    const dongName = doc.address ? doc.address.region_3depth_name : "";
-    const jibun = doc.address ? `${doc.address.main_address_no}${doc.address.sub_address_no ? "-" + doc.address.sub_address_no : ""}` : "";
-
-    // ---------- 2. 최근 3개월 실거래가 조회 (국토부, 아파트매매) ----------
     const now = new Date();
     const months = [0, 1, 2].map((i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
@@ -51,31 +34,26 @@ export default async function handler(req, res) {
     });
 
     let allItems = [];
-    let lastRawResponse = null;
     for (const dealYmd of months) {
       const url =
         `https://apis.data.go.kr/1613000/RTMSDataSvcAptTrade/getRTMSDataSvcAptTrade` +
         `?serviceKey=${MOLIT_KEY}&LAWD_CD=${lawdCd}&DEAL_YMD=${dealYmd}&numOfRows=1000&pageNo=1&_type=json`;
       const r = await fetch(url);
       const rawText = await r.text();
-      lastRawResponse = rawText.slice(0, 500);
       let j;
       try {
         j = JSON.parse(rawText);
       } catch (parseErr) {
-        // 국토부 API가 JSON이 아닌 응답(주로 XML 에러 메시지)을 준 경우
         return res.status(502).json({
           error: "국토부 API 응답을 해석할 수 없습니다.",
           debug_molit_status: r.status,
-          debug_molit_raw: rawText.slice(0, 800),
-          debug_request_url: url.replace(MOLIT_KEY, "[HIDDEN]"),
+          debug_molit_raw: rawText.slice(0, 500),
         });
       }
       const items = j?.response?.body?.items?.item;
       if (items) {
         allItems = allItems.concat(Array.isArray(items) ? items : [items]);
       } else if (j?.response?.header?.resultCode && j.response.header.resultCode !== "00") {
-        // 국토부가 JSON이지만 에러코드를 준 경우 (키 미승인, 파라미터 오류 등)
         return res.status(502).json({
           error: "국토부 API에서 오류를 반환했습니다.",
           debug_molit_resultCode: j.response.header.resultCode,
@@ -88,38 +66,55 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "최근 3개월 내 해당 지역 아파트 실거래 내역이 없습니다. 시세를 직접 입력해주세요." });
     }
 
-    // ---------- 3. 지번/동 이름으로 유사 매물 우선 필터링, 없으면 지역 전체 평균 ----------
+    // 매칭 우선순위: (지번+면적) > 지번 > (동+면적) > 동 > (시군구+면적) > 시군구
+    // 면적은 ±3㎡ 이내를 "같은 평형대"로 간주 (평수 환산: 1평 = 3.3058㎡)
+    const AREA_TOLERANCE = 3;
+    const withinArea = (it) => Math.abs(parseFloat(it.excluUseAr) - areaSqm) <= AREA_TOLERANCE;
+
     const normalizedJibun = jibun.replace(/[^0-9-]/g, "");
-    let matched = allItems.filter((it) => {
+    const byJibun = allItems.filter((it) => {
       const itJibun = (it.jibun || "").toString().replace(/[^0-9-]/g, "");
       return normalizedJibun && itJibun === normalizedJibun;
     });
-    const usedItems = matched.length > 0 ? matched : allItems;
-    const scope = matched.length > 0 ? "exact" : "district";
+    const byDong = dong ? allItems.filter((it) => (it.umdNm || "").trim() === dong.trim()) : [];
+
+    let usedItems = [];
+    let scope = "";
+
+    if (hasArea && byJibun.filter(withinArea).length > 0) {
+      usedItems = byJibun.filter(withinArea); scope = "exact_area";
+    } else if (byJibun.length > 0) {
+      usedItems = byJibun; scope = "exact";
+    } else if (hasArea && byDong.filter(withinArea).length > 0) {
+      usedItems = byDong.filter(withinArea); scope = "dong_area";
+    } else if (byDong.length > 0) {
+      usedItems = byDong; scope = "dong";
+    } else if (hasArea && allItems.filter(withinArea).length > 0) {
+      usedItems = allItems.filter(withinArea); scope = "district_area";
+    } else {
+      usedItems = allItems; scope = "district";
+    }
 
     const prices = usedItems
       .map((it) => parseInt(String(it.dealAmount).replace(/[^0-9]/g, ""), 10))
       .filter((n) => !isNaN(n));
 
     if (prices.length === 0) {
-      return res.status(200).json({
-        error: "가격 필드를 해석하지 못했습니다.",
-        debug_sample_item: usedItems[0],
-        debug_item_count: usedItems.length,
-      });
+      return res.status(404).json({ error: "가격 정보를 확인할 수 없습니다. 시세를 직접 입력해주세요." });
     }
 
     const avg = Math.round(prices.reduce((a, b) => a + b, 0) / prices.length);
     const min = Math.min(...prices);
     const max = Math.max(...prices);
+    const avgAreaSqm = Math.round((usedItems.reduce((a, it) => a + (parseFloat(it.excluUseAr) || 0), 0) / usedItems.length) * 10) / 10;
 
     return res.status(200).json({
       marketValueManwon: avg,
       minManwon: min,
       maxManwon: max,
       sampleCount: prices.length,
-      scope, // "exact"(동일 지번 매물 기준) | "district"(같은 법정동 전체 평균)
-      dong: dongName,
+      scope, // "exact_area" | "exact" | "dong_area" | "dong" | "district_area" | "district"
+      avgAreaSqm,
       months,
       source: "국토교통부 아파트매매 실거래자료(공공데이터포털)",
     });
@@ -127,4 +122,4 @@ export default async function handler(req, res) {
     console.error(err);
     return res.status(500).json({ error: "시세 조회 중 오류가 발생했습니다.", debug_message: err.message });
   }
-}
+};
