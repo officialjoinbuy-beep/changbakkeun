@@ -235,15 +235,26 @@
 </div>
 
 <script>
-  const comparisons = [
-    { name: '스타벅스 아메리카노', price: 5500 },
-    { name: '점심 정식', price: 12000 },
-    { name: '편의점 도시락', price: 8000 },
-    { name: '영화 티켓', price: 14000 },
-    { name: '택시 기본요금', price: 3800 },
-    { name: '회전초밥 1인분', price: 12000 },
-    { name: '카페 라떼', price: 5500 },
-    { name: '편의점 라면', price: 4000 },
+  const savingsComparisons = [
+    { name: '스타벅스 아메리카노', price: 5500, icon: '☕' },
+    { name: '점심 정식', price: 12000, icon: '🍱' },
+    { name: '편의점 도시락', price: 8000, icon: '🍙' },
+    { name: '영화 티켓', price: 14000, icon: '🎬' },
+    { name: '택시 기본요금', price: 3800, icon: '🚕' },
+    { name: '회전초밥 1인분', price: 12000, icon: '🍣' },
+    { name: '카페 라떼', price: 5500, icon: '☕' },
+    { name: '편의점 라면', price: 4000, icon: '🍜' },
+  ];
+
+  const expenseComparisons = [
+    { name: '스타벅스 한 달분', price: 55000, icon: '☕' },
+    { name: '좋은 마스크팩 세트', price: 30000, icon: '🧴' },
+    { name: '에어팟 프로', price: 100000, icon: '🎧' },
+    { name: '겨울옷 한 벌', price: 150000, icon: '🧥' },
+    { name: '게이밍 마우스', price: 200000, icon: '🖱️' },
+    { name: '항공권 (서울-부산)', price: 250000, icon: '✈️' },
+    { name: '월세 일부', price: 500000, icon: '🏠' },
+    { name: '노트북 기초형', price: 800000, icon: '💻' },
   ];
 
   document.getElementById('drugName').addEventListener('change', (e) => {
@@ -343,42 +354,44 @@
     document.getElementById('netCost').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
     document.getElementById('netCostBreakdown').innerHTML = `<span style="color:var(--muted);font-size:11px;">${netFormula}</span>${formatNumber(netCost)}원`;
 
-    generateComparisons(Math.abs(netCost));
+    generateComparisons(netCost, duration);
     generateEvaluation(netCost, totalDrug);
-    generateSummary(netCost, duration);
+    generateSummary(netCost, duration, beforeWeekly, afterWeekly);
 
     document.getElementById('resultContainer').classList.add('show');
     document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth' });
   }
 
-  function generateSummary(netCost, duration) {
-    const absAmount = Math.abs(netCost);
+  function generateSummary(netCost, duration, beforeWeekly, afterWeekly) {
+    const beforeMonthly = Math.round(beforeWeekly * 4.3);
+    const afterMonthly = Math.round(afterWeekly * 4.3);
     const summaryEl = document.getElementById('summaryText');
 
     if(netCost < 0) {
-      summaryEl.innerHTML = `<span style="color:#4CAF50;">${formatNumber(absAmount)}원을 버는 거예요!</span>`;
+      summaryEl.innerHTML = `<span style="color:#4CAF50;">월 ${formatNumber(Math.abs(netCost))}원을 절감할 수 있어요!</span>`;
     } else {
-      summaryEl.innerHTML = `<span style="color:#ff6b6b;">${formatNumber(netCost)}원을 추가로 지출해야 해요!</span>`;
+      const increasePercent = Math.round((netCost / beforeMonthly) * 100);
+      summaryEl.innerHTML = `
+        <div style="margin-bottom:6px;font-size:12px;color:var(--muted);">투약 전 월 지출</div>
+        <div style="margin-bottom:12px;font-size:16px;font-weight:700;color:var(--ivory);">${formatNumber(beforeMonthly)}원</div>
+        <div style="margin-bottom:6px;font-size:12px;color:var(--muted);">투약 후 월 지출</div>
+        <div style="margin-bottom:12px;font-size:16px;font-weight:700;color:var(--ivory);">${formatNumber(beforeMonthly + netCost)}원</div>
+        <div style="padding:10px;background:var(--board);border-radius:4px;text-align:center;color:#ff9800;font-weight:700;">
+          추가 비용: ${formatNumber(netCost)}원 (+${increasePercent}%)
+        </div>
+        <div style="margin-top:10px;font-size:12px;color:var(--muted);text-align:center;">이 정도면 충분히 감당할 수 있어요!</div>
+      `;
     }
   }
 
-  function generateComparisons(amount) {
-    const icons = {
-      '스타벅스 아메리카노': '☕',
-      '점심 정식': '🍱',
-      '편의점 도시락': '🍙',
-      '영화 티켓': '🎬',
-      '택시 기본요금': '🚕',
-      '회전초밥 1인분': '🍣',
-      '카페 라떼': '☕',
-      '편의점 라면': '🍜'
-    };
+  function generateComparisons(netCost, duration) {
+    const amount = Math.abs(netCost);
+    const comparisons = netCost < 0 ? savingsComparisons : expenseComparisons;
 
     const html = comparisons.map(c => {
       const count = Math.round(amount / c.price);
-      const icon = icons[c.name] || '✓';
       return `<div class="comparison-item" style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--board);border-radius:4px;margin-bottom:10px;">
-        <span style="font-size:32px;">${icon}</span>
+        <span style="font-size:32px;">${c.icon}</span>
         <div>
           <div style="font-size:14px;font-weight:700;color:var(--amber);">${count}개</div>
           <div style="font-size:12px;color:var(--muted);">${c.name}</div>
