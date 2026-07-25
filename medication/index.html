@@ -278,6 +278,10 @@
     document.getElementById('totalAfter').textContent = after.toLocaleString() + '원';
   }
 
+  function formatNumber(num) {
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+
   function calculate() {
     const drugCost = parseInt(document.getElementById('drugCost').value) || 0;
     const duration = parseInt(document.getElementById('duration').value);
@@ -308,10 +312,10 @@
     const totalDrug = drugCost * (duration / (prescriptionWeeks / 4));
     const netCost = totalDrug - totalSaving;
 
-    document.getElementById('totalDrug').textContent = Math.round(totalDrug).toLocaleString() + '원';
-    document.getElementById('totalSaving').textContent = totalSaving.toLocaleString() + '원';
-    document.getElementById('netCost').textContent = Math.round(netCost).toLocaleString() + '원';
-    document.getElementById('netCostBreakdown').textContent = Math.round(netCost).toLocaleString() + '원';
+    document.getElementById('totalDrug').textContent = formatNumber(totalDrug) + '원';
+    document.getElementById('totalSaving').textContent = formatNumber(totalSaving) + '원';
+    document.getElementById('netCost').textContent = formatNumber(netCost) + '원';
+    document.getElementById('netCostBreakdown').textContent = formatNumber(netCost) + '원';
 
     generateComparisons(Math.abs(netCost));
     generateEvaluation(netCost, totalDrug);
