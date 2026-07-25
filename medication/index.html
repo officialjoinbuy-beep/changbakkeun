@@ -145,14 +145,32 @@
     </div>
 
     <div class="form-group">
-      <label>사용 기간</label>
-      <div style="display:flex;gap:8px;">
-        <button class="duration-btn" style="flex:1;padding:10px;background:var(--board);border:1px solid var(--split-line);color:var(--ivory);border-radius:4px;cursor:pointer;transition:all .2s;" data-months="1">1개월</button>
-        <button class="duration-btn" style="flex:1;padding:10px;background:var(--board);border:1px solid var(--split-line);color:var(--ivory);border-radius:4px;cursor:pointer;transition:all .2s;background:rgba(242,194,48,0.12);border-color:var(--amber);color:var(--amber);" data-months="3">3개월</button>
-        <button class="duration-btn" style="flex:1;padding:10px;background:var(--board);border:1px solid var(--split-line);color:var(--ivory);border-radius:4px;cursor:pointer;transition:all .2s;" data-months="6">6개월</button>
-        <button class="duration-btn" style="flex:1;padding:10px;background:var(--board);border:1px solid var(--split-line);color:var(--ivory);border-radius:4px;cursor:pointer;transition:all .2s;" data-months="12">12개월</button>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <label style="margin:0;">사용 기간</label>
+        <span style="font-size:18px;font-weight:700;color:var(--amber);" id="durationLabel">3개월</span>
       </div>
-      <input type="hidden" id="duration" value="3">
+      <input type="range" id="duration" min="1" max="12" value="3" style="width:100%;height:6px;border-radius:3px;background:var(--board);border:1px solid var(--split-line);outline:none;-webkit-appearance:none;appearance:none;">
+      <style>
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: var(--amber);
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(242,194,48,0.3);
+        }
+        input[type="range"]::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: var(--amber);
+          cursor: pointer;
+          border: none;
+          box-shadow: 0 2px 8px rgba(242,194,48,0.3);
+        }
+      </style>
     </div>
   </div>
 
@@ -265,18 +283,8 @@
     }
   });
 
-  document.querySelectorAll('.duration-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.duration-btn').forEach(b => {
-        b.style.background = 'var(--board)';
-        b.style.borderColor = 'var(--split-line)';
-        b.style.color = 'var(--ivory)';
-      });
-      btn.style.background = 'rgba(242,194,48,0.12)';
-      btn.style.borderColor = 'var(--amber)';
-      btn.style.color = 'var(--amber)';
-      document.getElementById('duration').value = btn.dataset.months;
-    });
+  document.getElementById('duration').addEventListener('input', (e) => {
+    document.getElementById('durationLabel').textContent = e.target.value + '개월';
   });
 
   document.querySelectorAll('.table input').forEach(input => {
